@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Filtered SNPs by Population</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+
+<style>
+.container {
+    max-width: 90%;
+    margin: auto;
+    text-align: center;
+    padding-bottom: 40px;
+}
+
+.table-container {
+    max-height: 500px;
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    margin-top: 20px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    table-layout: fixed;
+}
+
+th {
+    background-color: #007BFF;
+    color: white;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    padding: 12px;
+}
+
+th, td {
+    padding: 12px;
+    border: 1px solid #ddd;
+    word-wrap: break-word;
+    white-space: normal;
+}
+
+tr:nth-child(even) {
+    background-color: #f2f2f2;
+}
+
+.details-link {
+    color: #007BFF;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.details-link:hover {
+    text-decoration: underline;
+}
+
+.back-button {
+    display: inline-block;
+    margin-top: 15px;
+    padding: 12px;
+    font-size: 16px;
+    border-radius: 5px;
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.back-button:hover {
+    background-color: #0056b3;
+}
+
+/* ✅ Style for Tajima's D plot */
+.tajima-plot {
+    margin-top: 30px;
+    text-align: center;
+}
+
+.tajima-plot img {
+    width: 80%;
+    border: 1px solid #ccc;
+    padding: 10px;
+    background: white;
+}
+
+/* ✅ Download Button */
+.download-button {
+    display: inline-block;
+    padding: 10px 15px;
+    margin-top: 15px;
+    font-size: 16px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    border-radius: 5px;
+}
+
+.download-button:hover {
+    background-color: #218838;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h1>SNPs for Population: {{ region }}</h1>
+
+    <!-- ✅ Prevent Population Dropdown from Showing Again -->
+    {% if not region %}
+    <div class="filter-container">
+        <form id="populationForm" method="POST" action="{{ url_for('filter_by_population') }}">
+            <label for="populationSelect"><strong>Select a Population:</strong></label>
+            <select name="population" id="populationSelect">
+                <option value="" disabled selected>Choose a population</option>
+                <option value="South Asian">South Asian</option>
+                <option value="European">European</option>
+                <option value="African">African</option>
+                <option value="East Asian">East Asian</option>
+            </select>
+            <input type="hidden" name="snp_ids" id="snpIds" value="{{ ','.join(snp_ids) }}">
+            <button type="submit">Filter</button>
+        </form>
+    </div>
+    {% endif %}
+
+    <!-- ✅ Tajima's D Summary Statistics (Only for South Asian) -->
+    {% if region and region.lower() == "south asian" and summary_stats %}
+        <h2>Tajima's D Summary Statistics</h2>
+        <table>
+            <tr><td><strong>Min Tajima’s D:</strong></td><td>{{ summary_stats["min_tajimas_d"] }}</td></tr>
+            <tr><td><strong>Max Tajima’s D:</strong></td><td>{{ summary_stats["max_tajimas_d"] }}</td></tr>
+            <tr><td><strong>Mean Tajima’s D:</strong></td><td>{{ summary_stats["avg_tajimas_d"] }}</td></tr>
+            <tr><td><strong>Median Tajima’s D:</strong></td><td>{{ summary_stats["median_tajimas_d"] }}</td></tr>
+            <tr><td><strong>Standard Deviation:</strong></td><td>{{ summary_stats["std_tajimas_d"] }}</td></tr>
+        </table>
+
+        {% if download_url %}
+            <br>
+            <a href="{{ download_url }}" class="download-button">Download Summary Statistics</a>
+        {% endif %}
+    {% endif %}
+
+    <!-- ✅ SNP Table -->
+    {% if snps and snps|length > 0 %}
+        <p><strong>Showing {{ snps|length }} SNPs</strong> in <strong>{{ region }}</strong>.</p>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>SNP Name</th>
+                        <th>Chromosome</th>
+                        <th>Position</th>
+                        <th>P-Value</th>
+                        <th>Sample Size</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for snp in snps %}
+                        <tr>
+                            <td>{{ snp.snp_name }}</td>
+                            <td>{{ snp.chr_id }}</td>
+                            <td>{{ snp.chr_pos }}</td>
+                            <td>{{ snp.p_value if snp.p_value else 'N/A' }}</td>
+                            <td>{{ snp.sample_size if snp.sample_size else 'N/A' }}</td>
+                            <td>
+                                <a href="{{ url_for('snp_details', snp_name=snp.snp_name) }}" class="details-link">
+                                    View Details
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p>No SNPs found for this population.</p>
+    {% endif %}
+
+    <!-- ✅ Fix: Show Tajima's D Plot only for South Asian population -->
+    {% if region and region.lower() == "south asian" and tajima_plot_url %}
+        <div class="tajima-plot">
+            <h2>Tajima's D Plot</h2>
+            <img src="{{ tajima_plot_url }}" alt="Tajima's D Plot">
+        </div>
+    {% endif %}
+
+    <br>
+    <a href="{{ url_for('index') }}" class="back-button">Back to Search</a>
+</div>
+
+</body>
+</html>
