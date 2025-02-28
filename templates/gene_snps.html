@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SNPs for {{ gene }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>SNPs Mapped to {{ gene }}</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th>SNP Name</th>
+                    <th>Chromosome</th>
+                    <th>Position</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for snp in snps %}
+                    <tr>
+                        <td>{{ snp.snp_name }}</td>
+                        <td>{{ snp.chr_id }}</td>
+                        <td>{{ snp.chr_pos }}</td>
+                        <td>
+                            <a href="{{ url_for('snp_details', snp_name=snp.snp_name) }}" class="details-link">View Details</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <br>
+        <a href="{{ url_for('gene_ontology', gene_name=gene) }}" class="btn">View Ontology Terms</a>
+        <br><br>
+        <a href="{{ url_for('index') }}" class="back-link">Back to Search</a>
+    </div>
+</body>
+</html>
