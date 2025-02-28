@@ -1,4 +1,9 @@
 The strucutre of your folders should be the same as this. 
-Create a type_2_diabetes folder and in it create an instance folder. This will be the path that you will quote when asked for the database path. 
-Create the other folders - csv_files, py_codes and templates. 
-Create a static folder (not statics) within the type_2_diabetes folder. Within the statics 
+Open up vscode and create a type_2_diabetes folder and in it create an instance folder. This will be the path that you will quote when asked for the database path. 
+Create the other folders - csv_files, py_codes and templates (all of them in the type_2_diabetes folder. 
+Create a static folder (not statics) within the type_2_diabetes folder. Within the statics folder, create a new folder called images. 
+
+Download and save all the csv_files from GitHub to the csv_files folder within your own type_2_diabetes folder. 
+
+In VScode, within the type_2_diabetes folder, create a web_application.py file. Copy and paste the code from the web_application.py file from Github.
+Move to the py_codes folder and create all of the .py files that are in the py_codes
