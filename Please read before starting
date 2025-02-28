@@ -1,9 +1,24 @@
 The strucutre of your folders should be the same as this. 
-Open up vscode and create a type_2_diabetes folder and in it create an instance folder. This will be the path that you will quote when asked for the database path. 
+Open up vscode and create a type_2_diabetes folder and in it create an instance folder. This will be the path that you will quote when asked for the database path.
+The databse will 
 Create the other folders - csv_files, py_codes and templates (all of them in the type_2_diabetes folder. 
+In github. its called py codes but that was a mistake - save it as py_codes.
 Create a static folder (not statics) within the type_2_diabetes folder. Within the statics folder, create a new folder called images. 
+
+Open up the terminal and cd to your instance folder. e.g mine would be /Users/zeinabbarre/Desktop/type_2_diabetes/instance.
+Create a new database to store all of the info using sqlite3 db.db.
+Check that you have correctly created the databse by typing sqlite> .database
+(my example: /Users/zeinabbarre/Desktop/type_2_diabetes/instance/db.db)
+
+Copy the CREATE TABLES commands found in the schema tables file on Github into sqlite. Make sure to copy everything including the UPDATE commands.
 
 Download and save all the csv_files from GitHub to the csv_files folder within your own type_2_diabetes folder. 
 
 In VScode, within the type_2_diabetes folder, create a web_application.py file. Copy and paste the code from the web_application.py file from Github.
-Move to the py_codes folder and create all of the .py files that are in the py_codes
+Move to the py_codes folder and create all of the .py files that are in the py_codes and copy and paste the code.
+
+Move to the templates folder and create all of the hmtml files that are in the GitHub templates folder. Copy and paste each files code and save.
+
+Edit the paths to your csv files and database to make sure they are correct. To find your database path in sqlite, type .database
+To find which file to use to populate the table, check the .py file you are trying to use.
+E.g. if i am using the populating_snp_table.py, i will check the csv file path and choose unique_snps.csv. 
