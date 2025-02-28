@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tajima's D Plot</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        .container {
+            max-width: 80%;
+            margin: auto;
+            text-align: center;
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+            border: 2px solid #ccc;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .back-button {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 12px;
+            font-size: 16px;
+            border-radius: 5px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .back-button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Tajima’s D Plot for Chromosome {{ chromosome }}: {{ start_pos }} - {{ end_pos }}</h1>
+
+        <!-- Tajima's D Plot -->
+        <img src="{{ url_for('tajimas_image', chromosome=chromosome, start=start_pos, end=end_pos) }}" alt="Tajima's D Plot">
+
+        <br>
+        <a href="{{ url_for('index') }}" class="back-button">Back to Search</a>
+    </div>
+
+</body>
+</html>
