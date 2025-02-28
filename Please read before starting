@@ -1,1 +1,4 @@
-The strucutre of your 
+The strucutre of your folders should be the same as this. 
+Create a type_2_diabetes folder and in it create an instance folder. This will be the path that you will quote when asked for the database path. 
+Create the other folders - csv_files, py_codes and templates. 
+Create a static folder (not statics) within the type_2_diabetes folder. Within the statics 
