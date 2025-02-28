@@ -7,7 +7,7 @@ conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
 
 # Load Tajima's D file
-tajima_df = pd.read_csv("/Users/zeinabbarre/Desktop/group_project/tajima_pjl.Tajima.D", sep="\t")
+tajima_df = pd.read_csv("/Users/zeinabbarre/Desktop/type_2_diabetes/tajima_pjl.Tajima.D", sep="\t")
 
 # Ensure column names match the `tajimas_pjl` table
 tajima_df.columns = ["chromosome", "bin_start", "n_snps", "tajimas_d"]  # Adjust if needed
