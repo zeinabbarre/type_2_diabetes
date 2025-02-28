@@ -7,6 +7,14 @@ CREATE TABLE SNPs (
     FOREIGN KEY (gene_id) REFERENCES Genes(gene_id) ON DELETE SET NULL
 );
 
+UPDATE SNPs
+SET gene_id = (
+    SELECT sg.gene_id
+    FROM SNP_Gene sg
+    WHERE SNPs.snp_id = sg.snp_id
+)
+WHERE gene_id IS NULL;
+
 
 CREATE TABLE Genes (
     gene_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -58,9 +66,18 @@ CREATE TABLE Populations (
     FOREIGN KEY (snp_id) REFERENCES SNPs(snp_id) ON DELETE CASCADE
 );
 
+UPDATE SNP_Population SET population = 'South Asian' WHERE population = 'South Asia';
+UPDATE SNP_Population SET population = 'General Asian' WHERE population = 'General Asia';
+
+UPDATE Populations 
+SET region = 'South Asian' 
+WHERE region IN ('South Asia', 'South asian', 'S. Asia');
+
 CREATE TABLE tajimas_BEB (
     chromosome INTEGER,
     bin_start INTEGER,
     n_snps INTEGER,
     tajimas_d REAL
 );
+
+
