@@ -1,0 +1,14 @@
+CREATE TABLE SNPs (
+    snp_id INTEGER PRIMARY KEY AUTOINCREMENT,  -- Unique identifier for SNP
+    snp_name TEXT UNIQUE NOT NULL,             -- SNP Identifier (e.g., rs1234)
+    chr_id TEXT NOT NULL,                      -- Chromosome number (e.g., "9", "10", "11")
+    chr_pos INTEGER NOT NULL,                  -- Genomic position
+    gene_id INTEGER,                           -- Links to a gene if available
+    FOREIGN KEY (gene_id) REFERENCES Genes(gene_id) ON DELETE SET NULL
+);
+
+
+CREATE TABLE Genes (
+    gene_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    gene_name TEXT UNIQUE NOT NULL
+);
