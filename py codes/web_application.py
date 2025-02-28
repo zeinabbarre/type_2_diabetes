@@ -317,33 +317,49 @@ def plot_tajimas_combined(chromosome, start_pos, end_pos):
 
 @app.route('/gene/<gene_name>')
 def gene_ontology(gene_name):
-    """Displays ontology terms for a given gene."""
+    """Displays ontology terms for a given gene using the Ontology table."""
     conn = get_db_connection()
 
+    # Get the gene details, including gene_id
     gene = conn.execute("SELECT * FROM Genes WHERE gene_name = ?", (gene_name,)).fetchone()
     if not gene:
         conn.close()
         flash(f"Gene '{gene_name}' not found.", "error")
         return redirect(url_for('index'))
 
-    ontology_terms = conn.execute("""
-        SELECT go_term_type, go_term 
-        FROM Gene_Ontology_Terms
+    # Fetch ontology data from the Ontology table
+    ontology = conn.execute("""
+        SELECT gene_stable_id, description, gene_type, 
+               molecular_function, biological_process, cellular_component
+        FROM Ontology
         WHERE gene_id = ?
-    """, (gene['gene_id'],)).fetchall()
+    """, (gene['gene_id'],)).fetchone()
 
     conn.close()
 
+    # If no ontology data is found, handle it gracefully
+    if not ontology:
+        flash(f"No ontology data found for gene '{gene_name}'.", "warning")
+        return render_template('gene_ontology.html', gene_name=gene_name, ontology_data={}, gene_info={})
+
+    # Organize ontology data
     ontology_data = {
-        "Molecular Function": [row['go_term'] for row in ontology_terms if row['go_term_type'] == 'Molecular Function'],
-        "Biological Process": [row['go_term'] for row in ontology_terms if row['go_term_type'] == 'Biological Process'],
-        "Cellular Component": [row['go_term'] for row in ontology_terms if row['go_term_type'] == 'Cellular Component']
+        "Molecular Function": ontology['molecular_function'].split('; ') if ontology['molecular_function'] else [],
+        "Biological Process": ontology['biological_process'].split('; ') if ontology['biological_process'] else [],
+        "Cellular Component": ontology['cellular_component'].split('; ') if ontology['cellular_component'] else []
     }
 
-    return render_template('gene_ontology.html', gene_name=gene_name, ontology_data=ontology_data)
+    # Additional gene information
+    gene_info = {
+        "Stable ID": ontology['gene_stable_id'],
+        "Description": ontology['description'],
+        "Gene Type": ontology['gene_type']
+    }
 
+    return render_template('gene_ontology.html', gene_name=gene_name, ontology_data=ontology_data, gene_info=gene_info)
 
 
 if __name__ == '__main__':
     app.run(debug=True)
+
 
