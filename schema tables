@@ -12,3 +12,47 @@ CREATE TABLE Genes (
     gene_id INTEGER PRIMARY KEY AUTOINCREMENT,
     gene_name TEXT UNIQUE NOT NULL
 );
+
+CREATE TABLE Ontology (
+    ontology_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    gene_id INTEGER,
+    gene_stable_id TEXT,
+    description TEXT,
+    gene_type TEXT,
+    molecular_function TEXT,
+    biological_process TEXT,
+    cellular_component TEXT,
+    FOREIGN KEY (gene_id) REFERENCES Genes (gene_id) ON DELETE CASCADE
+);
+
+CREATE TABLE tajimas_pjl (
+    chromosome INTEGER,
+    bin_start INTEGER,
+    n_snps INTEGER,
+    tajimas_d REAL
+);
+CREATE TABLE SNP_Population (
+    population_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    snp_id INTEGER NOT NULL,
+    population TEXT NOT NULL,
+    sample_size TEXT NOT NULL,
+    p_value REAL NOT NULL,
+    region TEXT NOT NULL,
+    FOREIGN KEY (snp_id) REFERENCES SNPs(snp_id)
+);
+
+CREATE TABLE Populations (
+    pop_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    snp_id INTEGER NOT NULL,
+    region TEXT NOT NULL,
+    p_value REAL NOT NULL,
+    sample_size TEXT,
+    FOREIGN KEY (snp_id) REFERENCES SNPs(snp_id) ON DELETE CASCADE
+);
+
+CREATE TABLE tajimas_BEB (
+    chromosome INTEGER,
+    bin_start INTEGER,
+    n_snps INTEGER,
+    tajimas_d REAL
+);
