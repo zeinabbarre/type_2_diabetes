@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gene Ontology</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body class="results-page">
+
+    <div class="container">
+        <h1>Ontology Terms for {{ gene_name }}</h1>
+
+        {% if ontology_data.get("Gene Stable ID") %}
+            <p><strong>Gene Stable ID:</strong> {{ ontology_data["Gene Stable ID"] }}</p>
+        {% endif %}
+
+        {% for category, terms in ontology_data.items() %}
+            {% if category not in ["Gene Stable ID", "Gene Type", "Description"] %}
+                <h2>{{ category }}</h2>
+                <table class="ontology-table">
+                    <tr>
+                        <th>Ontology Term</th>
+                    </tr>
+                    {% for term in terms %}
+                        <tr>
+                            <td>{{ term }}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            {% endif %}
+        {% endfor %}
+    </div>
+
+    <a href="{{ url_for('index') }}" class="back-button">Back to Search</a>
+
+</body>
+</html>
