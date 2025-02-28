@@ -13,6 +13,14 @@ CREATE TABLE Genes (
     gene_name TEXT UNIQUE NOT NULL
 );
 
+CREATE TABLE SNP_Gene (
+    snp_id INTEGER,
+    gene_id INTEGER,
+    PRIMARY KEY (snp_id, gene_id),
+    FOREIGN KEY (snp_id) REFERENCES SNPs(snp_id) ON DELETE CASCADE,
+    FOREIGN KEY (gene_id) REFERENCES Genes(gene_id) ON DELETE CASCADE
+);
+
 CREATE TABLE Ontology (
     ontology_id INTEGER PRIMARY KEY AUTOINCREMENT,
     gene_id INTEGER,
