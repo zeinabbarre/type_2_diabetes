@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trusty Tahr's Type 2 Diabetes SNP Explorer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+
+    <div class="header">
+        <div class="header-title">Trusty Tahr's Type 2 Diabetes SNP Explorer</div>
+        <div class="header-divider"></div>
+        <div class="header-info">Explore SNP information related to Type-2 Diabetes in various populations.</div>
+    </div>
+
+    <div class="container">
+        <!-- 🔹 Existing SNP Search Form -->
+        <form action="{{ url_for('search_snp') }}" method="POST">
+            <input type="text" name="search_query" class="search-box" placeholder="Enter SNP (e.g., rs1234), coordinates, or gene name">
+            <button type="submit">Search</button>
+        </form>
+
+        <div class="instruction-box">
+            <p>Format:<br>- SNP: rsXXXX<br>- Genomic coordinates: chr:start-end<br>- Gene: GeneName<br>- Population: European, South Asian, etc.</p>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <p class="error">{{ message }}</p>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <img src="{{ url_for('static', filename='images/Tahrgrouplogo.jpg') }}" alt="Group Logo" class="group-logo">
+
+</body>
+</html>
