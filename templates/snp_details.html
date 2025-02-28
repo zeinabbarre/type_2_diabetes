@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SNP Details</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+
+    <style>
+        .container {
+            max-width: 90%;
+            margin: auto;
+            text-align: center;
+            padding: 40px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: black;
+            font-size: 2em;
+        }
+
+        .snp-info {
+            margin-top: 20px;
+            text-align: left;
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        select {
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            background: white;
+            margin-top: 10px;
+        }
+
+        .table-container {
+            margin-top: 20px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            background: white;
+        }
+
+        th {
+            background-color: #007BFF;
+            color: white;
+            padding: 12px;
+        }
+
+        th, td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        .back-button {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px;
+            font-size: 16px;
+            border-radius: 5px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .back-button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>SNP Details</h1>
+
+    <div class="snp-info">
+        <p><strong>SNP Name:</strong> {{ snp["snp_name"] }}</p>
+        <p><strong>Chromosome:</strong> {{ snp["chr_id"] }}</p>
+        <p><strong>Position:</strong> {{ snp["chr_pos"] }}</p>
+        
+        <!-- ✅ Mapped Genes Dropdown -->
+        <h2>Mapped Genes</h2>
+        {% if mapped_genes and mapped_genes|length > 0 %}
+            <label for="geneDropdown">Select a gene:</label>
+            <select id="geneDropdown" onchange="navigateToOntology(this)">
+                <option value="">-- Select a Gene --</option>
+                {% for gene in mapped_genes %}
+                    <option value="{{ url_for('gene_ontology', gene_name=gene['gene_name']) }}">
+                        {{ gene['gene_name'] }}
+                    </option>
+                {% endfor %}
+            </select>
+        {% else %}
+            <p>No mapped genes found.</p>
+        {% endif %}
+
+        <!-- ✅ Population Data Table -->
+        <h2>Associated Populations</h2>
+        {% if populations and populations|length > 0 %}
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Population</th>
+                        <th>P-Value</th>
+                        <th>Sample Size</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pop in populations %}
+                    <tr>
+                        <td>{{ pop.region }}</td>
+                        <td>{{ pop.p_value if pop.p_value else 'N/A' }}</td>
+                        <td>{{ pop.sample_size if pop.sample_size else 'N/A' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+            <p>No population data found for this SNP.</p>
+        {% endif %}
+    </div>
+
+    <br>
+    <a href="{{ url_for('index') }}" class="back-button">Back to Search</a>
+</div>
+
+<script>
+    function navigateToOntology(selectElement) {
+        if (selectElement.value) {
+            window.location.href = selectElement.value;
+        }
+    }
+</script>
+
+</body>
+</html>
