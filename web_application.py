@@ -91,7 +91,7 @@ def search_snp():
 # ✅ SNP DETAILS PAGE
 @app.route('/snp/<snp_name>')
 def snp_details(snp_name):
-    """Displays detailed SNP information along with mapped genes and populations."""
+    """Displays detailed SNP information along with mapped genes and populations (without Population column and duplicates)."""
     conn = get_db_connection()
 
     # 🔹 Fetch SNP details
@@ -124,15 +124,14 @@ def snp_details(snp_name):
             WHERE sg.snp_id = ?
         """, (snp["snp_id"],)).fetchall()
 
-    # 🔹 Get population data (fixing the incorrect column reference)
+    # 🔹 Get population data (without Population column) and remove duplicates
     populations = conn.execute("""
-        SELECT region, p_value, sample_size 
+        SELECT DISTINCT p_value, sample_size 
         FROM Populations WHERE snp_id = ?
     """, (snp["snp_id"],)).fetchall()
 
     conn.close()
     return render_template('snp_details.html', snp=snp, mapped_genes=mapped_genes, populations=populations)
-
 
 
 @app.route('/filter_by_population', methods=['POST'])
@@ -361,4 +360,5 @@ def gene_ontology(gene_name):
 
 if __name__ == '__main__':
     app.run(debug=True)
+
 
