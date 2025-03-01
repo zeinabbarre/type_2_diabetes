@@ -11,13 +11,23 @@
     <div class="container">
         <h1>Ontology Terms for {{ gene_name }}</h1>
 
-        {% if ontology_data.get("Gene Stable ID") %}
-            <p><strong>Gene Stable ID:</strong> {{ ontology_data["Gene Stable ID"] }}</p>
-        {% endif %}
+        <!-- Display Gene Information -->
+        <div class="gene-info">
+            {% if gene_info["Stable ID"] %}
+                <p><strong>Gene Stable ID:</strong> {{ gene_info["Stable ID"] }}</p>
+            {% endif %}
+            {% if gene_info["Description"] %}
+                <p><strong>Description:</strong> {{ gene_info["Description"] }}</p>
+            {% endif %}
+            {% if gene_info["Gene Type"] %}
+                <p><strong>Gene Type:</strong> {{ gene_info["Gene Type"] }}</p>
+            {% endif %}
+        </div>
 
+        <!-- Display Ontology Terms -->
         {% for category, terms in ontology_data.items() %}
-            {% if category not in ["Gene Stable ID", "Gene Type", "Description"] %}
-                <h2>{{ category }}</h2>
+            <h2>{{ category }}</h2>
+            {% if terms %}
                 <table class="ontology-table">
                     <tr>
                         <th>Ontology Term</th>
@@ -28,6 +38,8 @@
                         </tr>
                     {% endfor %}
                 </table>
+            {% else %}
+                <p>No terms available for {{ category }}.</p>
             {% endif %}
         {% endfor %}
     </div>
