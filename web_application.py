@@ -47,14 +47,21 @@ def search_snp():
     
     if gene:
         snps = conn.execute("""
-            SELECT s.snp_name, s.chr_id, s.chr_pos
+            SELECT s.snp_id, s.snp_name, s.chr_id, s.chr_pos
             FROM SNPs s
             JOIN SNP_Gene sg ON s.snp_id = sg.snp_id
             WHERE sg.gene_id = ?
         """, (gene['gene_id'],)).fetchall()
 
+        #Fetch distinct populations from Populations table
+        populations = conn.execute("""
+        SELECT DISTINCT region FROM Populations
+    """).fetchall()
+        populations = [pop['region'] for pop in populations]
+
         conn.close()
-        return render_template('gene_snps.html', snps=snps, gene=query)
+        return render_template('filtered_snps.html', snps=snps, populations=populations, query=query)
+    
 
     # 🔹 Search by Genomic Coordinates
     match = re.match(r"^(\d+):(\d+)-(\d+)$", query)
@@ -136,7 +143,7 @@ def snp_details(snp_name):
 
 @app.route('/filter_by_population', methods=['POST'])
 def filter_by_population():
-    """Filters SNPs by population and displays results. Only computes summary stats for South Asian population."""
+    """Filters SNPs by population and displays results. Computes summary stats for South Asian population."""
     population = request.form.get('population')
     snp_ids = request.form.get('snp_ids')
 
@@ -153,7 +160,7 @@ def filter_by_population():
     # ✅ Query SNPs for the selected population
     placeholders = ','.join(['?'] * len(snp_ids_list))
     query = f"""
-        SELECT s.snp_name, s.chr_id, s.chr_pos, p.p_value, p.sample_size
+        SELECT s.snp_name, s.chr_id, s.chr_pos, p.p_value, p.sample_size, s.snp_id
         FROM SNPs s
         JOIN Populations p ON s.snp_id = p.snp_id
         WHERE p.region = ? AND s.snp_id IN ({placeholders})
@@ -163,6 +170,20 @@ def filter_by_population():
     snps = conn.execute(query, params).fetchall()
 
     print(f"📊 Retrieved {len(snps)} SNPs")  # Debugging print
+
+    # ✅ Fetch mapped genes for each SNP
+    mapped_genes = {}
+    for snp in snps:
+        genes = conn.execute("""
+            SELECT g.gene_name 
+            FROM SNP_Gene sg
+            JOIN Genes g ON sg.gene_id = g.gene_id
+            WHERE sg.snp_id = ?
+        """, (snp["snp_id"],)).fetchall()
+        mapped_genes[snp["snp_name"]] = [gene["gene_name"] for gene in genes]
+
+    # ✅ Count unique SNP names
+    unique_snp_names = set(snp["snp_name"] for snp in snps)
 
     summary_stats = None
     tajima_plot_url = None
@@ -214,7 +235,9 @@ def filter_by_population():
         return render_template(
             'population_snps.html',
             snps=snps,
-            region=population
+            region=population,
+            unique_snp_count=len(unique_snp_names),  # Pass the unique SNP count
+            mapped_genes=mapped_genes  # Pass mapped genes
         )
 
     # ✅ If South Asian, return full details with summary stats and plot
@@ -222,6 +245,8 @@ def filter_by_population():
         'population_snps.html',
         snps=snps,
         region=population,
+        unique_snp_count=len(unique_snp_names),  # Pass the unique SNP count
+        mapped_genes=mapped_genes,  # Pass mapped genes
         summary_stats=summary_stats,
         tajima_plot_url=tajima_plot_url,
         download_url=download_url
