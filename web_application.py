@@ -189,8 +189,8 @@ def filter_by_population():
     tajima_plot_url = None
     download_url = None
 
-    # ✅ Only compute Tajima's D summary statistics for South Asian population
-    if population.lower() == "south asian":
+    # ✅ Always Compute Summary Stats & Plot for South Asian Population
+    if population.lower() == "south asian" and snps:
         stats_query = """SELECT tajimas_d FROM tajimas_BEB"""
         result = conn.execute(stats_query).fetchall()
 
@@ -230,28 +230,16 @@ def filter_by_population():
 
     conn.close()
 
-    # ✅ If not South Asian, return SNP table only (without stats or plots)
-    if population.lower() != "south asian":
-        return render_template(
-            'population_snps.html',
-            snps=snps,
-            region=population,
-            unique_snp_count=len(unique_snp_names),  # Pass the unique SNP count
-            mapped_genes=mapped_genes  # Pass mapped genes
-        )
-
-    # ✅ If South Asian, return full details with summary stats and plot
     return render_template(
         'population_snps.html',
         snps=snps,
         region=population,
-        unique_snp_count=len(unique_snp_names),  # Pass the unique SNP count
-        mapped_genes=mapped_genes,  # Pass mapped genes
-        summary_stats=summary_stats,
-        tajima_plot_url=tajima_plot_url,
-        download_url=download_url
+        unique_snp_count=len(unique_snp_names),
+        mapped_genes=mapped_genes,
+        summary_stats=summary_stats,  # ✅ Always passed
+        tajima_plot_url=tajima_plot_url,  # ✅ Always passed
+        download_url=download_url  # ✅ Always passed
     )
-
 
 
 # ✅ Route for Downloading Summary Statistics
@@ -385,5 +373,6 @@ def gene_ontology(gene_name):
 
 if __name__ == '__main__':
     app.run(debug=True)
+
 
 
