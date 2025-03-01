@@ -1,9 +1,13 @@
+import os
 import pandas as pd
 import sqlite3
 
-# File paths
-csv_file_path = "/Users/zeinabbarre/Desktop/type_2_diabetes/csv_files/snp_gene.csv"
-db_path = "/Users/zeinabbarre/Desktop/type_2_diabetes/instance/db.db"
+# Get the base directory of the script
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+
+# Use relative paths for files
+csv_file_path = os.path.join(BASE_DIR, "csv_files", "snp_gene.csv")
+db_path = os.path.join(BASE_DIR, "instance", "db.db")
 
 # Load CSV file
 df = pd.read_csv(csv_file_path)
@@ -35,3 +39,4 @@ cursor.close()
 conn.close()
 
 print("✅ SNP-Gene mappings inserted successfully!")
+
