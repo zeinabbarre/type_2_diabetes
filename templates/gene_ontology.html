@@ -42,9 +42,15 @@
                 <p>No terms available for {{ category }}.</p>
             {% endif %}
         {% endfor %}
-    </div>
 
-    <a href="{{ url_for('index') }}" class="back-button">Back to Search</a>
+        <!-- ✅ Moved the button below all content -->
+        <div style="margin-top: 30px; text-align: center;">
+            <a href="{{ url_for('index') }}">
+                <button>Back to Search</button>
+            </a>
+        </div>
+    </div>
 
 </body>
 </html>
+
