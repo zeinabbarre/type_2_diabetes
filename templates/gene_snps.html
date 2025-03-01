@@ -9,6 +9,25 @@
 <body>
     <div class="container">
         <h1>SNPs Mapped to {{ gene }}</h1>
+
+        <!-- ✅ Population Selection Dropdown -->
+        {% if snps|length > 1 %}
+            <h2>Choose a Population</h2>
+            <form action="{{ url_for('filter_by_population') }}" method="POST">
+                <input type="hidden" name="snp_ids" value="{{ snps|map(attribute='snp_id')|join(',') }}">
+                <label for="population">Select Population:</label>
+                <select name="population" id="population" required>
+                    <option value="">-- Select Population --</option>
+                    {% for pop in populations %}
+                        <option value="{{ pop }}">{{ pop }}</option>
+                    {% endfor %}
+                </select>
+                <br><br>
+                <button type="submit" class="filter-button">Filter SNPs</button>
+            </form>
+        {% endif %}
+
+        <!-- ✅ SNPs Table -->
         <table>
             <thead>
                 <tr>
@@ -31,6 +50,7 @@
                 {% endfor %}
             </tbody>
         </table>
+
         <br>
         <a href="{{ url_for('gene_ontology', gene_name=gene) }}" class="btn">View Ontology Terms</a>
         <br><br>
