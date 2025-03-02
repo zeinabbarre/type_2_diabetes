@@ -1,0 +1,136 @@
+# creating the table 
+CREATE TABLE tajimas_PJL (
+    chromosome INTEGER,
+    bin_start INTEGER,
+    n_snps INTEGER,
+    tajimas_d REAL
+);
+
+
+## populating the new tajimas PJL 
+import sqlite3
+import pandas as pd
+
+# Connect to SQLite
+db_path = "/mnt/c/Users/Hp EliteBook 840 G3/OneDrive/Desktop/type_2_diabetes/instance/db.db"
+
+conn = sqlite3.connect(db_path)
+cursor = conn.cursor()
+
+# Load Tajima's D file
+tajima_df = pd.read_csv("/mnt/c/Users/Hp EliteBook 840 G3/OneDrive/Desktop/type_2_diabetes/csv_files/filtered_merged_tajimasD_all_chromosomes.csv")
+
+# Ensure column names match the `tajimas_PJL` table
+tajima_df.columns = ["chromosome", "bin_start", "n_snps", "tajimas_d"]  # Adjust if needed
+
+# Option 1: Drop rows where 'tajimas_d' is NaN
+# tajima_df = tajima_df.dropna(subset=["tajimas_d"])
+
+# Option 2: Fill NaN values with 0 (or another default value)
+tajima_df["tajimas_d"].fillna(0, inplace=True)  # Replace NaN with 0
+
+# Save to SQLite
+tajima_df.to_sql("tajimas_PJL", conn, if_exists="append", index=False)  # ✅ Append to existing table
+
+print("✅ Tajima's D data imported successfully into tajimas_PJL!")
+conn.close()
+
+
+
+
+##Plotting both graphs 
+
+# PJL 
+import sqlite3
+import pandas as pd
+import matplotlib.pyplot as plt
+
+def get_tajimas(chromosome, start_pos, end_pos, table_name):
+    """Fetch Tajima's D values for a specific region from the given SQL table."""
+    conn = sqlite3.connect("/mnt/c/Users/Hp EliteBook 840 G3/OneDrive/Desktop/type_2_diabetes/instance/db.db")
+    
+    query = f'''
+    SELECT bin_start, tajimas_d  
+    FROM {table_name}
+    WHERE chromosome = ?  
+    AND bin_start BETWEEN ? AND ?
+    ORDER BY bin_start;
+    '''
+    
+    df = pd.read_sql_query(query, conn, params=(chromosome, start_pos, end_pos))
+    conn.close()
+    
+    return df
+
+def plot_tajimas_pjl(chromosome, start_pos, end_pos):
+    """Plot Tajima's D values for the Punjabi population only."""
+    # Fetch Tajima's D values for PJL (Punjabi in Lahore) population
+    df_pjl = get_tajimas(chromosome, start_pos, end_pos, "tajimas_PJL")  
+
+    plt.figure(figsize=(10, 5))
+
+    # Plot Punjabi Population (Blue)
+    if not df_pjl.empty:
+        plt.plot(df_pjl["bin_start"], df_pjl["tajimas_d"], marker="o", linestyle="-", color="blue", label="Punjabi (Lahore)")
+
+    # Add Labels & Title
+    plt.axhline(y=0, color="black", linestyle="--", label="Neutral Selection")
+    plt.xlabel("Genomic Position (bp)")
+    plt.ylabel("Tajima's D")
+    plt.title(f"Tajima’s D Across Chromosome {chromosome} ({start_pos}-{end_pos})")
+    plt.legend()
+    
+    # Show the plot
+    plt.show()
+
+# **Run the function with example chromosome & positions**
+plot_tajimas_pjl(3, 185811292, 186948673)
+
+## BEB
+import sqlite3
+import pandas as pd
+import matplotlib.pyplot as plt
+
+def get_tajimas(chromosome, start_pos, end_pos, table_name):
+    """Fetch Tajima's D values for a specific region from the given SQL table."""
+    conn = sqlite3.connect("/mnt/c/Users/Hp EliteBook 840 G3/OneDrive/Desktop/type_2_diabetes/instance/db.db")
+    
+    query = f'''
+    SELECT bin_start, tajimas_d  
+    FROM {table_name}
+    WHERE chromosome = ?  
+    AND bin_start BETWEEN ? AND ?
+    ORDER BY bin_start;
+    '''
+    
+    df = pd.read_sql_query(query, conn, params=(chromosome, start_pos, end_pos))
+    conn.close()
+    
+    return df
+
+def plot_tajimas_beb(chromosome, start_pos, end_pos):
+    """Plot Tajima's D values for the Bengali population only."""
+    # Fetch Tajima's D values for BEB (Bengali in Bangladesh) population
+    df_beb = get_tajimas(chromosome, start_pos, end_pos, "tajimas_BEB")  
+
+    plt.figure(figsize=(10, 5))
+
+    # Plot Bengali Population (Red)
+    if not df_beb.empty:
+        plt.plot(df_beb["bin_start"], df_beb["tajimas_d"], marker="s", linestyle="-", color="red", label="Bengali (Bangladesh)")
+
+    # Add Labels & Title
+    plt.axhline(y=0, color="black", linestyle="--", label="Neutral Selection")
+    plt.xlabel("Genomic Position (bp)")
+    plt.ylabel("Tajima's D")
+    plt.title(f"Tajima’s D Across Chromosome {chromosome} ({start_pos}-{end_pos})")
+    plt.legend()
+    
+    # Show the plot
+    plt.show()
+
+# **Run the function with example chromosome & positions**
+plot_tajimas_beb(3, 185811292, 186948673)
+
+
+
