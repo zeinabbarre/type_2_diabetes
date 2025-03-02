@@ -1,1 +1,120 @@
-new schema
+-- ✅ 1. Create the Genes Table (Foundation for SNP-Gene & Ontology)
+CREATE TABLE Genes (
+    gene_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    gene_name TEXT UNIQUE NOT NULL
+);
+
+-- ✅ 2. Create the Ontology Table (References Genes)
+CREATE TABLE Ontology (
+    ontology_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    gene_id INTEGER,
+    gene_stable_id TEXT,
+    description TEXT,
+    gene_type TEXT,
+    molecular_function TEXT,
+    biological_process TEXT,
+    cellular_component TEXT,
+    FOREIGN KEY (gene_id) REFERENCES Genes (gene_id) ON DELETE CASCADE
+);
+
+-- ✅ 3. Create the SNPs Table (References Genes)
+CREATE TABLE SNPs (
+    snp_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    snp_name TEXT UNIQUE NOT NULL,
+    chr_id TEXT NOT NULL,
+    chr_pos INTEGER NOT NULL,
+    gene_id INTEGER,  -- References Genes
+    FOREIGN KEY (gene_id) REFERENCES Genes(gene_id) ON DELETE SET NULL
+);
+
+-- ✅ 4. Create the SNP-Gene Relationship Table (Many-to-Many)
+CREATE TABLE SNP_Gene (
+    snp_id INTEGER,
+    gene_id INTEGER,
+    PRIMARY KEY (snp_id, gene_id),
+    FOREIGN KEY (snp_id) REFERENCES SNPs(snp_id) ON DELETE CASCADE,
+    FOREIGN KEY (gene_id) REFERENCES Genes(gene_id) ON DELETE CASCADE
+);
+
+-- ✅ 5. Automatically Assign Gene IDs to SNPs (Trigger)
+CREATE TRIGGER auto_assign_gene_id
+BEFORE INSERT ON SNPs
+FOR EACH ROW
+BEGIN
+    UPDATE SNPs
+    SET gene_id = (
+        SELECT sg.gene_id
+        FROM SNP_Gene sg
+        WHERE SNPs.snp_id = sg.snp_id
+    )
+    WHERE gene_id IS NULL;
+END;
+
+-- ✅ 6. Create the SNP_Population Table (SNPs in Different Populations)
+CREATE TABLE SNP_Population (
+    population_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    snp_id INTEGER NOT NULL,
+    population TEXT NOT NULL,
+    sample_size TEXT NOT NULL,
+    p_value REAL NOT NULL,
+    region TEXT NOT NULL,
+    FOREIGN KEY (snp_id) REFERENCES SNPs(snp_id)
+);
+
+-- ✅ 7. Create the Populations Table (General Population Data)
+CREATE TABLE Populations (
+    pop_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    snp_id INTEGER NOT NULL,
+    region TEXT NOT NULL,
+    p_value REAL NOT NULL,
+    sample_size TEXT,
+    FOREIGN KEY (snp_id) REFERENCES SNPs(snp_id) ON DELETE CASCADE
+);
+
+-- ✅ 8. Normalize Population Names Before Insert (Trigger)
+CREATE TRIGGER normalize_snp_population
+BEFORE INSERT ON SNP_Population
+FOR EACH ROW
+BEGIN
+    SELECT CASE
+        WHEN NEW.population IN ('South Asia', 'South asia', 'S. Asia') THEN
+            SET NEW.population = 'South Asian';
+        WHEN NEW.population = 'General Asia' THEN
+            SET NEW.population = 'General Asian';
+        WHEN NEW.population = 'East Asia' THEN
+            SET NEW.population = 'East Asian';
+    END;
+END;
+
+-- ✅ 9. Normalize Region Names Before Insert (Trigger)
+CREATE TRIGGER normalize_population_region
+BEFORE INSERT ON Populations
+FOR EACH ROW
+BEGIN
+    SELECT CASE
+        WHEN NEW.region IN ('South Asia', 'South asia', 'S. Asia') THEN
+            SET NEW.region = 'South Asian';
+        WHEN NEW.region IN ('East Asia', 'E. Asia', 'Eastern Asia') THEN
+            SET NEW.region = 'East Asian';
+        WHEN NEW.region IN ('European', 'Europe') THEN
+            SET NEW.region = 'European';
+        WHEN NEW.region IN ('African', 'Africa') THEN
+            SET NEW.region = 'African';
+    END;
+END;
+
+-- ✅ 10. Create the Tajima's D Summary Statistics Tables
+CREATE TABLE tajimas_pjl (
+    chromosome INTEGER,
+    bin_start INTEGER,
+    n_snps INTEGER,
+    tajimas_d REAL
+);
+
+CREATE TABLE tajimas_BEB (
+    chromosome INTEGER,
+    bin_start INTEGER,
+    n_snps INTEGER,
+    tajimas_d REAL
+);
+
