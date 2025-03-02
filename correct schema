@@ -1,0 +1,121 @@
+
+CREATE TABLE Genes (
+    gene_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    gene_name TEXT UNIQUE NOT NULL
+);
+
+
+CREATE TABLE Ontology (
+    ontology_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    gene_id INTEGER,
+    gene_stable_id TEXT,
+    description TEXT,
+    gene_type TEXT,
+    molecular_function TEXT,
+    biological_process TEXT,
+    cellular_component TEXT,
+    FOREIGN KEY (gene_id) REFERENCES Genes (gene_id) ON DELETE CASCADE
+);
+
+
+CREATE TABLE SNPs (
+    snp_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    snp_name TEXT UNIQUE NOT NULL,
+    chr_id TEXT NOT NULL,
+    chr_pos INTEGER NOT NULL,
+    gene_id INTEGER,  -- References Genes
+    FOREIGN KEY (gene_id) REFERENCES Genes(gene_id) ON DELETE SET NULL
+);
+
+
+CREATE TABLE SNP_Gene (
+    snp_id INTEGER,
+    gene_id INTEGER,
+    PRIMARY KEY (snp_id, gene_id),
+    FOREIGN KEY (snp_id) REFERENCES SNPs(snp_id) ON DELETE CASCADE,
+    FOREIGN KEY (gene_id) REFERENCES Genes(gene_id) ON DELETE CASCADE
+);
+
+
+CREATE TRIGGER auto_assign_gene_id
+BEFORE INSERT ON SNPs
+FOR EACH ROW
+BEGIN
+    UPDATE SNPs
+    SET gene_id = (
+        SELECT sg.gene_id
+        FROM SNP_Gene sg
+        WHERE SNPs.snp_id = sg.snp_id
+    )
+    WHERE gene_id IS NULL;
+END;
+
+
+CREATE TABLE SNP_Population (
+    population_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    snp_id INTEGER NOT NULL,
+    population TEXT NOT NULL,
+    sample_size TEXT NOT NULL,
+    p_value REAL NOT NULL,
+    region TEXT NOT NULL,
+    FOREIGN KEY (snp_id) REFERENCES SNPs(snp_id)
+);
+
+
+CREATE TABLE Populations (
+    pop_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    snp_id INTEGER NOT NULL,
+    region TEXT NOT NULL,
+    p_value REAL NOT NULL,
+    sample_size TEXT,
+    FOREIGN KEY (snp_id) REFERENCES SNPs(snp_id) ON DELETE CASCADE
+);
+
+
+CREATE TRIGGER normalize_snp_population
+BEFORE INSERT ON SNP_Population
+FOR EACH ROW
+BEGIN
+    UPDATE SNP_Population
+    SET population = 
+        CASE 
+            WHEN NEW.population IN ('South Asia', 'South asia', 'S. Asia') THEN 'South Asian'
+            WHEN NEW.population IN ('General Asia', 'Gen Asia') THEN 'General Asian'
+            WHEN NEW.population IN ('East Asia', 'E. Asia') THEN 'East Asian'
+            ELSE NEW.population
+        END
+    WHERE population = NEW.population;
+END;
+
+
+CREATE TRIGGER normalize_population_region
+BEFORE INSERT ON Populations
+FOR EACH ROW
+BEGIN
+    UPDATE Populations
+    SET region = 
+        CASE 
+            WHEN NEW.region IN ('South Asia', 'South asia', 'S. Asia') THEN 'South Asian'
+            WHEN NEW.region IN ('East Asia', 'E. Asia', 'Eastern Asia') THEN 'East Asian'
+            WHEN NEW.region IN ('European', 'Europe') THEN 'European'
+            WHEN NEW.region IN ('African', 'Africa') THEN 'African'
+            ELSE NEW.region
+        END
+    WHERE region = NEW.region;
+END;
+
+
+
+CREATE TABLE tajimas_pjl (
+    chromosome INTEGER,
+    bin_start INTEGER,
+    n_snps INTEGER,
+    tajimas_d REAL
+);
+
+CREATE TABLE tajimas_BEB (
+    chromosome INTEGER,
+    bin_start INTEGER,
+    n_snps INTEGER,
+    tajimas_d REAL
+);
