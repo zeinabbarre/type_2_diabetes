@@ -76,14 +76,15 @@ CREATE TRIGGER normalize_snp_population
 BEFORE INSERT ON SNP_Population
 FOR EACH ROW
 BEGIN
-    SELECT CASE
-        WHEN NEW.population IN ('South Asia', 'South asia', 'S. Asia') THEN
-            SET NEW.population = 'South Asian';
-        WHEN NEW.population = 'General Asia' THEN
-            SET NEW.population = 'General Asian';
-        WHEN NEW.population = 'East Asia' THEN
-            SET NEW.population = 'East Asian';
-    END;
+    UPDATE SNP_Population
+    SET population = 
+        CASE 
+            WHEN NEW.population IN ('South Asia', 'South asia', 'S. Asia') THEN 'South Asian'
+            WHEN NEW.population IN ('General Asia', 'Gen Asia') THEN 'General Asian'
+            WHEN NEW.population IN ('East Asia', 'E. Asia') THEN 'East Asian'
+            ELSE NEW.population
+        END
+    WHERE population = NEW.population;
 END;
 
 
@@ -91,17 +92,18 @@ CREATE TRIGGER normalize_population_region
 BEFORE INSERT ON Populations
 FOR EACH ROW
 BEGIN
-    SELECT CASE
-        WHEN NEW.region IN ('South Asia', 'South asia', 'S. Asia') THEN
-            SET NEW.region = 'South Asian';
-        WHEN NEW.region IN ('East Asia', 'E. Asia', 'Eastern Asia') THEN
-            SET NEW.region = 'East Asian';
-        WHEN NEW.region IN ('European', 'Europe') THEN
-            SET NEW.region = 'European';
-        WHEN NEW.region IN ('African', 'Africa') THEN
-            SET NEW.region = 'African';
-    END;
+    UPDATE Populations
+    SET region = 
+        CASE 
+            WHEN NEW.region IN ('South Asia', 'South asia', 'S. Asia') THEN 'South Asian'
+            WHEN NEW.region IN ('East Asia', 'E. Asia', 'Eastern Asia') THEN 'East Asian'
+            WHEN NEW.region IN ('European', 'Europe') THEN 'European'
+            WHEN NEW.region IN ('African', 'Africa') THEN 'African'
+            ELSE NEW.region
+        END
+    WHERE region = NEW.region;
 END;
+
 
 
 CREATE TABLE tajimas_pjl (
