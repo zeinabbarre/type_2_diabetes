@@ -1,10 +1,10 @@
--- ✅ 1. Create the Genes Table (Foundation for SNP-Gene & Ontology)
+
 CREATE TABLE Genes (
     gene_id INTEGER PRIMARY KEY AUTOINCREMENT,
     gene_name TEXT UNIQUE NOT NULL
 );
 
--- ✅ 2. Create the Ontology Table (References Genes)
+
 CREATE TABLE Ontology (
     ontology_id INTEGER PRIMARY KEY AUTOINCREMENT,
     gene_id INTEGER,
@@ -17,7 +17,7 @@ CREATE TABLE Ontology (
     FOREIGN KEY (gene_id) REFERENCES Genes (gene_id) ON DELETE CASCADE
 );
 
--- ✅ 3. Create the SNPs Table (References Genes)
+
 CREATE TABLE SNPs (
     snp_id INTEGER PRIMARY KEY AUTOINCREMENT,
     snp_name TEXT UNIQUE NOT NULL,
@@ -27,7 +27,7 @@ CREATE TABLE SNPs (
     FOREIGN KEY (gene_id) REFERENCES Genes(gene_id) ON DELETE SET NULL
 );
 
--- ✅ 4. Create the SNP-Gene Relationship Table (Many-to-Many)
+
 CREATE TABLE SNP_Gene (
     snp_id INTEGER,
     gene_id INTEGER,
@@ -36,7 +36,7 @@ CREATE TABLE SNP_Gene (
     FOREIGN KEY (gene_id) REFERENCES Genes(gene_id) ON DELETE CASCADE
 );
 
--- ✅ 5. Automatically Assign Gene IDs to SNPs (Trigger)
+
 CREATE TRIGGER auto_assign_gene_id
 BEFORE INSERT ON SNPs
 FOR EACH ROW
@@ -50,7 +50,7 @@ BEGIN
     WHERE gene_id IS NULL;
 END;
 
--- ✅ 6. Create the SNP_Population Table (SNPs in Different Populations)
+
 CREATE TABLE SNP_Population (
     population_id INTEGER PRIMARY KEY AUTOINCREMENT,
     snp_id INTEGER NOT NULL,
@@ -61,7 +61,7 @@ CREATE TABLE SNP_Population (
     FOREIGN KEY (snp_id) REFERENCES SNPs(snp_id)
 );
 
--- ✅ 7. Create the Populations Table (General Population Data)
+
 CREATE TABLE Populations (
     pop_id INTEGER PRIMARY KEY AUTOINCREMENT,
     snp_id INTEGER NOT NULL,
@@ -71,7 +71,7 @@ CREATE TABLE Populations (
     FOREIGN KEY (snp_id) REFERENCES SNPs(snp_id) ON DELETE CASCADE
 );
 
--- ✅ 8. Normalize Population Names Before Insert (Trigger)
+
 CREATE TRIGGER normalize_snp_population
 BEFORE INSERT ON SNP_Population
 FOR EACH ROW
@@ -86,7 +86,7 @@ BEGIN
     END;
 END;
 
--- ✅ 9. Normalize Region Names Before Insert (Trigger)
+
 CREATE TRIGGER normalize_population_region
 BEFORE INSERT ON Populations
 FOR EACH ROW
@@ -103,7 +103,7 @@ BEGIN
     END;
 END;
 
--- ✅ 10. Create the Tajima's D Summary Statistics Tables
+
 CREATE TABLE tajimas_pjl (
     chromosome INTEGER,
     bin_start INTEGER,
