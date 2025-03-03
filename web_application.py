@@ -329,46 +329,53 @@ def plot_tajimas_combined(chromosome, start_pos, end_pos):
 
 @app.route('/gene/<gene_name>')
 def gene_ontology(gene_name):
-    """Displays ontology terms for a given gene using the Ontology table."""
+    """Displays ontology terms and pathway data for a given gene using the new Ontology table."""
     conn = get_db_connection()
 
-    # Get the gene details, including gene_id
+    # ✅ Get gene details, including gene_id
     gene = conn.execute("SELECT * FROM Genes WHERE gene_name = ?", (gene_name,)).fetchone()
     if not gene:
         conn.close()
         flash(f"Gene '{gene_name}' not found.", "error")
         return redirect(url_for('index'))
 
-    # Fetch ontology data from the Ontology table
+    # ✅ Fetch ontology data from the new Ontology table
     ontology = conn.execute("""
         SELECT gene_stable_id, description, gene_type, 
-               molecular_function, biological_process, cellular_component
+               molecular_function, biological_process, cellular_component, pathway
         FROM Ontology
         WHERE gene_id = ?
     """, (gene['gene_id'],)).fetchone()
 
     conn.close()
 
-    # If no ontology data is found, handle it gracefully
+    # ✅ Handle missing ontology data
     if not ontology:
         flash(f"No ontology data found for gene '{gene_name}'.", "warning")
         return render_template('gene_ontology.html', gene_name=gene_name, ontology_data={}, gene_info={})
 
-    # Organize ontology data
+    # ✅ Organize ontology data: Split terms so they appear on separate lines
     ontology_data = {
         "Molecular Function": ontology['molecular_function'].split('; ') if ontology['molecular_function'] else [],
         "Biological Process": ontology['biological_process'].split('; ') if ontology['biological_process'] else [],
         "Cellular Component": ontology['cellular_component'].split('; ') if ontology['cellular_component'] else []
     }
 
-    # Additional gene information
+    # ✅ Process Pathways (Handle None Values)
+    pathway_list = ontology['pathway'].split('; ') if ontology['pathway'] else []
+
+    # ✅ Additional gene information (Now includes pathways)
     gene_info = {
         "Stable ID": ontology['gene_stable_id'],
         "Description": ontology['description'],
-        "Gene Type": ontology['gene_type']
+        "Gene Type": ontology['gene_type'],
+        "Pathways": pathway_list if pathway_list else ["No pathway data available."]
     }
 
     return render_template('gene_ontology.html', gene_name=gene_name, ontology_data=ontology_data, gene_info=gene_info)
+
+
+
 
 
 if __name__ == '__main__':
