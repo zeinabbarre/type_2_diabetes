@@ -67,3 +67,46 @@ cursor.close()
 conn.close()
 print("✅ Nucleotide Diversity data successfully populated!")
 
+
+****ONLY A SECTION FOR WEB APP TO LINK SNP TO NUCLEOTIDE DIVERSITY****
+
+import sqlite3
+import pandas as pd
+
+def get_nucleotide_diversity(chromosome, start_pos, end_pos, population):
+    """ Fetch nucleotide diversity for a given chromosome region and population """
+    
+    # Connect to database
+    conn = sqlite3.connect("/Users/yasminahmed/Desktop/type_2_diabetes/instance/db.db")
+    cursor = conn.cursor()
+
+    query = '''
+    SELECT s.snp_id, s.chr_id, s.chr_pos, s.snp_name, s.gene_id,
+           nd.bin_start, nd.bin_end, nd.pi, nd.population
+    FROM SNPs AS s
+    LEFT JOIN Nucleotide_Diversity AS nd
+    ON s.chr_id = nd.chr_id  
+    AND s.chr_pos BETWEEN nd.bin_start AND nd.bin_end  
+    WHERE s.chr_id = ?  
+    AND s.chr_pos BETWEEN ? AND ?
+    AND nd.population = ?;
+    '''
+   
+    cursor.execute(query, (chromosome, start_pos, end_pos, population))
+    result = cursor.fetchall()
+   
+    conn.close()
+    return result
+
+# Example Queries for Bengali and Punjabi populations
+bengali_result = get_nucleotide_diversity(3, 22226594, 52640651, "Bengali")
+punjabi_result = get_nucleotide_diversity(3, 22226594, 52640651, "Punjabi")
+
+# Print Results
+print("🔹 Bengali Population Nucleotide Diversity Results:")
+print(bengali_result)
+
+print("\n🔹 Punjabi Population Nucleotide Diversity Results:")
+print(punjabi_result)
+
+
