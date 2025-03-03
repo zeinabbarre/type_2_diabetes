@@ -3,52 +3,155 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gene Ontology</title>
+    <title>Ontology Terms for {{ gene_name }}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    
+    <style>
+        /* ✅ Ensure the page background is clean */
+        body {
+            background-color: #e6f7ff; /* Light blue background */
+            margin: 0;
+            padding: 0;
+            font-family:'Times New Roman', Times, serif; /* Restored original font */
+        }
+
+        /* ✅ Center the large logo above the content */
+        .logo-container {
+            text-align: center;
+            margin-top: 30px; /* Increased spacing */
+            margin-bottom: 20px; /* More space between logo and content */
+        }
+
+        .logo-container img {
+            width: 400px; /* ✅ Made the logo much larger */
+            height: auto;
+        }
+
+        /* ✅ Main content container */
+        .gene-ontology-container {
+            max-width: 75%;
+            margin: 20px auto;
+            padding: 20px;
+            background: white;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            text-align: left;
+            font-size: 18px; /* ✅ Restored font size */
+        }
+
+        h1 {
+            font-size: 28px; /* ✅ Match second image */
+            font-weight: bold;
+        }
+
+        h2 {
+            font-size: 22px; /* ✅ Match second image */
+            font-weight: bold;
+            margin-top: 20px;
+        }
+
+        /* ✅ Gene Info Box */
+        .gene-info {
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background: #f9f9f9;
+            margin-bottom: 20px;
+            font-size: 18px;
+        }
+
+        /* ✅ Ontology Table */
+        .ontology-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 18px;
+        }
+
+        .ontology-table th, .ontology-table td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+
+        .ontology-table th {
+            background-color: #0056b3;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .ontology-table tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        /* ✅ Back Button */
+        .back-button {
+            display: block;
+            text-align: center;
+            margin: 20px auto;
+            padding: 12px 20px;
+            font-size: 18px;
+            border-radius: 5px;
+            background-color: #007BFF;
+            color: white;
+            text-decoration: none;
+            width: fit-content;
+            font-weight: bold;
+        }
+
+        .back-button:hover {
+            background-color: #0056b3;
+        }
+    </style>
 </head>
 <body class="results-page">
 
-    <div class="container">
+    <!-- ✅ Large Centered Logo Above Everything -->
+    <div class="logo-container">
+        <img src="{{ url_for('static', filename='images/gene_ontology.png') }}" alt="Gene Ontology Logo">
+    </div>
+
+    <div class="gene-ontology-container">
         <h1>Ontology Terms for {{ gene_name }}</h1>
 
-        <!-- Display Gene Information -->
+        <!-- ✅ Gene Information -->
         <div class="gene-info">
-            {% if gene_info["Stable ID"] %}
-                <p><strong>Gene Stable ID:</strong> {{ gene_info["Stable ID"] }}</p>
-            {% endif %}
-            {% if gene_info["Description"] %}
-                <p><strong>Description:</strong> {{ gene_info["Description"] }}</p>
-            {% endif %}
-            {% if gene_info["Gene Type"] %}
-                <p><strong>Gene Type:</strong> {{ gene_info["Gene Type"] }}</p>
+            <p><strong>Stable ID:</strong> {{ gene_info["Stable ID"] }}</p>
+            <p><strong>Description:</strong> {{ gene_info["Description"] }}</p>
+            <p><strong>Gene Type:</strong> {{ gene_info["Gene Type"] }}</p>
+            {% if gene_data %}
+                <p><strong>Chromosome:</strong> {{ gene_data["chromosome"] }}</p>
+                <p><strong>Start:</strong> {{ gene_data["start"] }}</p>
+                <p><strong>End:</strong> {{ gene_data["end"] }}</p>
             {% endif %}
         </div>
 
-        <!-- Display Ontology Terms -->
+        <!-- ✅ Ontology Table -->
         {% for category, terms in ontology_data.items() %}
-            <h2>{{ category }}</h2>
             {% if terms %}
+                <h2>{{ category }}</h2>
                 <table class="ontology-table">
-                    <tr>
-                        <th>Ontology Term</th>
-                    </tr>
-                    {% for term in terms %}
+                    <thead>
                         <tr>
-                            <td>{{ term }}</td>
+                            <th>Ontology Term</th>
                         </tr>
-                    {% endfor %}
+                    </thead>
+                    <tbody>
+                        {% for term in terms %}
+                            <tr>
+                                <td>{{ term }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
                 </table>
             {% else %}
                 <p>No terms available for {{ category }}.</p>
             {% endif %}
         {% endfor %}
 
-        <!-- ✅ Moved the button below all content -->
-        <div style="margin-top: 30px; text-align: center;">
-            <a href="{{ url_for('index') }}">
-                <button>Back to Search</button>
-            </a>
-        </div>
+        <!-- ✅ Back to Search Button -->
+        <a href="{{ url_for('index') }}" class="back-button">Back to Search</a>
     </div>
 
 </body>
