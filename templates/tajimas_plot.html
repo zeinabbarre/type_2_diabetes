@@ -10,6 +10,7 @@
             max-width: 80%;
             margin: auto;
             text-align: center;
+            padding-top: 30px; /* ✅ Pushes content down */
         }
 
         img {
@@ -20,10 +21,10 @@
             margin-top: 20px;
         }
 
-        .back-button {
+        .back-button, .download-button {
             display: inline-block;
-            margin-top: 15px;
-            padding: 12px;
+            margin-top: 20px;
+            padding: 12px 20px;
             font-size: 16px;
             border-radius: 5px;
             background-color: #007BFF;
@@ -33,8 +34,18 @@
             text-decoration: none;
         }
 
-        .back-button:hover {
+        .back-button:hover, .download-button:hover {
             background-color: #0056b3;
+        }
+
+        .plot-container {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 40px;
+        }
+
+        .plot-container img {
+            width: 48%;
         }
     </style>
 </head>
@@ -43,10 +54,27 @@
     <div class="container">
         <h1>Tajima’s D Plot for Chromosome {{ chromosome }}: {{ start_pos }} - {{ end_pos }}</h1>
 
-        <!-- Tajima's D Plot -->
-        <img src="{{ url_for('tajimas_image', chromosome=chromosome, start=start_pos, end=end_pos) }}" alt="Tajima's D Plot">
+        <div class="plot-container">
+            <!-- Punjabi (Lahore) Tajima's D Plot -->
+            <div>
+                <h3>Punjabi (Lahore) Tajima's D Plot</h3>
+                <img src="{{ url_for('tajimas_image', chromosome=chromosome, start=start_pos, end=end_pos, table_name='tajimas_pjl') }}" alt="Punjabi Tajima's D Plot">
+            </div>
+
+            <!-- Bengali (Bangladesh) Tajima's D Plot -->
+            <div>
+                <h3>Bengali (Bangladesh) Tajima's D Plot</h3>
+                <img src="{{ url_for('tajimas_image', chromosome=chromosome, start=start_pos, end=end_pos, table_name='tajimas_beb') }}" alt="Bengali Tajima's D Plot">
+            </div>
+        </div>
 
         <br>
+        <!-- ✅ Download Summary Statistics Button -->
+        {% if download_url %}
+            <a href="{{ download_url }}" class="download-button">Download Summary Statistics</a>
+        {% endif %}
+
+        <!-- ✅ Back to Search Button -->
         <a href="{{ url_for('index') }}" class="back-button">Back to Search</a>
     </div>
 
