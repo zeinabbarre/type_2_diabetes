@@ -14,8 +14,10 @@ CREATE TABLE Ontology (
     molecular_function TEXT,
     biological_process TEXT,
     cellular_component TEXT,
+    pathway TEXT,
     FOREIGN KEY (gene_id) REFERENCES Genes (gene_id) ON DELETE CASCADE
 );
+
 
 
 CREATE TABLE SNPs (
