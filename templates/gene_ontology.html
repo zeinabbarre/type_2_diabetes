@@ -7,9 +7,13 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 
     <style>
-        /* ✅ Ensure the page background is clean */
+        /* ✅ Ensure the page background matches the results page */
         body {
-            background-color: #e6f7ff; /* Light blue background */
+            background-image: url("/static/images/results_background.png");
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            height: 100vh;
             margin: 0;
             padding: 0;
             font-family: 'Times New Roman', Times, serif;
@@ -117,7 +121,7 @@
         }
     </style>
 </head>
-<body class="results-page">
+<body>
 
     <!-- ✅ Large Centered Logo Above Everything -->
     <div class="logo-container">
@@ -179,4 +183,3 @@
 
 </body>
 </html>
-
