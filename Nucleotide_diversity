@@ -1,0 +1,50 @@
+***NUCLEOTIDE_DIVERSITY***
+
+CREATE TABLE Nucleotide_Diversity (
+    diversity_id INTEGER PRIMARY KEY AUTOINCREMENT, 
+    chromosome TEXT NOT NULL,     -- Chromosome number (1, 2, ... X)
+    bin_start INTEGER NOT NULL,   -- Start of genomic bin
+    bin_end INTEGER NOT NULL,     -- End of genomic bin
+    n_variants INTEGER NOT NULL,  -- Number of variants in the bin
+    pi_value REAL NOT NULL,       -- Nucleotide Diversity (Pi)
+    population TEXT NOT NULL      -- Bengali or Punjabi
+);
+
+***POPULATE TABLE***
+
+import pandas as pd
+import sqlite3
+
+# File paths (update with actual paths)
+bengali_file = "/Users/yasminahmed/Desktop/type_2_diabetes/csv_files/sorted_nucleotide_diversity_bengali.pi"
+punjabi_file = "/Users/yasminahmed/Desktop/type_2_diabetes/csv_files/sorted_nucleotide_diversity_punjabi.pi"
+db_path = "/Users/yasminahmed/Desktop/type_2_diabetes/instance/db.db"
+
+# Function to load and insert data into SQLite
+def insert_nucleotide_diversity(csv_file, population, conn):
+    print(f"📥 Loading data for {population} population...")
+
+    # Load CSV
+    df = pd.read_csv(csv_file, delim_whitespace=True)
+
+    # Rename columns to match database
+    df.columns = ["chromosome", "bin_start", "bin_end", "n_variants", "pi_value"]
+    
+    # Add population column
+    df["population"] = population
+
+    # Insert into SQLite
+    df.to_sql("Nucleotide_Diversity", conn, if_exists="append", index=False)
+    
+    print(f"✅ Successfully inserted {len(df)} rows for {population} population.")
+
+# Connect to SQLite
+conn = sqlite3.connect(db_path)
+
+# Insert data for Bengali and Punjabi populations
+insert_nucleotide_diversity(bengali_file, "Bengali", conn)
+insert_nucleotide_diversity(punjabi_file, "Punjabi", conn)
+
+# Close connection
+conn.close()
+print("🎉 Data successfully inserted into the database!")
