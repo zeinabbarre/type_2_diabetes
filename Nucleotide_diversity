@@ -12,39 +12,58 @@ CREATE TABLE Nucleotide_Diversity (
 
 ***POPULATE TABLE***
 
-import pandas as pd
 import sqlite3
+import pandas as pd
 
-# File paths (update with actual paths)
-bengali_file = "/Users/yasminahmed/Desktop/type_2_diabetes/csv_files/sorted_nucleotide_diversity_bengali.pi"
-punjabi_file = "/Users/yasminahmed/Desktop/type_2_diabetes/csv_files/sorted_nucleotide_diversity_punjabi.pi"
-db_path = "/Users/yasminahmed/Desktop/type_2_diabetes/instance/db.db"
+# Paths
+db_path = "/Users/yasminahmed/Desktop/type_2_diabetes/instance/db.db"  # Update path if needed
+bengali_file = "/Users/yasminahmed/Desktop/type_2_diabetes/csv_files/sorted_nucleotide_diversity_beb.pi"
+punjabi_file = "/Users/yasminahmed/Desktop/type_2_diabetes/csv_files/sorted_nucleotide_diversity_pjl.pi"
 
-# Function to load and insert data into SQLite
-def insert_nucleotide_diversity(csv_file, population, conn):
-    print(f"📥 Loading data for {population} population...")
-
-    # Load CSV
-    df = pd.read_csv(csv_file, delim_whitespace=True)
-
-    # Rename columns to match database
-    df.columns = ["chromosome", "bin_start", "bin_end", "n_variants", "pi_value"]
-    
-    # Add population column
-    df["population"] = population
-
-    # Insert into SQLite
-    df.to_sql("Nucleotide_Diversity", conn, if_exists="append", index=False)
-    
-    print(f"✅ Successfully inserted {len(df)} rows for {population} population.")
-
-# Connect to SQLite
+# Connect to SQLite database
 conn = sqlite3.connect(db_path)
+cursor = conn.cursor()
 
-# Insert data for Bengali and Punjabi populations
-insert_nucleotide_diversity(bengali_file, "Bengali", conn)
-insert_nucleotide_diversity(punjabi_file, "Punjabi", conn)
+# Function to load and insert data
+def insert_nucleotide_diversity(file_path, population):
+    # Load CSV file
+    df = pd.read_csv(file_path, delim_whitespace=True)
+
+    # Check if columns are correct
+    expected_columns = {"CHROM", "BIN_START", "BIN_END", "N_VARIANTS", "PI"}
+    if not expected_columns.issubset(df.columns):
+        raise ValueError(f"CSV file {file_path} is missing required columns: {expected_columns - set(df.columns)}")
+
+    # Convert CHROM to string to match database format
+    df["CHROM"] = df["CHROM"].astype(str)
+
+    # Match SNP IDs from the SNPs table (linking nucleotide diversity data to SNPs)
+    snp_mapping = pd.read_sql_query("SELECT snp_id, chr_id, chr_pos FROM SNPs", conn)
+
+    # Merge to get SNP IDs
+    merged_df = df.merge(
+        snp_mapping, 
+        how="left", 
+        left_on=["CHROM", "BIN_START"], 
+        right_on=["chr_id", "chr_pos"]
+    )
+
+    # Insert into Nucleotide_Diversity table
+    for _, row in merged_df.iterrows():
+        cursor.execute("""
+            INSERT INTO Nucleotide_Diversity (snp_id, chr_id, bin_start, bin_end, population, pi)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (row["snp_id"], row["CHROM"], row["BIN_START"], row["BIN_END"], population, row["PI"]))
+
+    conn.commit()
+    print(f"✅ Successfully inserted {len(merged_df)} rows for {population}")
+
+# Insert Bengali and Punjabi data
+insert_nucleotide_diversity(bengali_file, "Bengali")
+insert_nucleotide_diversity(punjabi_file, "Punjabi")
 
 # Close connection
+cursor.close()
 conn.close()
-print("🎉 Data successfully inserted into the database!")
+print("✅ Nucleotide Diversity data successfully populated!")
+
