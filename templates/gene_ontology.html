@@ -5,25 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ontology Terms for {{ gene_name }}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    
+
     <style>
         /* ✅ Ensure the page background is clean */
         body {
             background-color: #e6f7ff; /* Light blue background */
             margin: 0;
             padding: 0;
-            font-family:'Times New Roman', Times, serif; /* Restored original font */
+            font-family: 'Times New Roman', Times, serif;
         }
 
         /* ✅ Center the large logo above the content */
         .logo-container {
             text-align: center;
-            margin-top: 30px; /* Increased spacing */
-            margin-bottom: 20px; /* More space between logo and content */
+            margin-top: 30px;
+            margin-bottom: 20px;
         }
 
         .logo-container img {
-            width: 400px; /* ✅ Made the logo much larger */
+            width: 400px;
             height: auto;
         }
 
@@ -36,16 +36,16 @@
             box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
             border-radius: 10px;
             text-align: left;
-            font-size: 18px; /* ✅ Restored font size */
+            font-size: 18px;
         }
 
         h1 {
-            font-size: 28px; /* ✅ Match second image */
+            font-size: 28px;
             font-weight: bold;
         }
 
         h2 {
-            font-size: 22px; /* ✅ Match second image */
+            font-size: 22px;
             font-weight: bold;
             margin-top: 20px;
         }
@@ -60,18 +60,30 @@
             font-size: 18px;
         }
 
+        /* ✅ Scrollable Table Container */
+        .table-container {
+            max-height: 250px; /* ✅ Limits table height */
+            overflow-y: auto; /* ✅ Enables vertical scrolling */
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 5px;
+            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
         /* ✅ Ontology Table */
         .ontology-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
-            font-size: 18px;
+            table-layout: fixed;
         }
 
         .ontology-table th, .ontology-table td {
             padding: 12px;
             border: 1px solid #ddd;
             text-align: left;
+            word-wrap: break-word;
+            white-space: normal;
+            max-width: 300px;
         }
 
         .ontology-table th {
@@ -115,36 +127,47 @@
     <div class="gene-ontology-container">
         <h1>Ontology Terms for {{ gene_name }}</h1>
 
-        <!-- ✅ Gene Information -->
+        <!-- ✅ Gene Information (Includes Pathways) -->
         <div class="gene-info">
             <p><strong>Stable ID:</strong> {{ gene_info["Stable ID"] }}</p>
             <p><strong>Description:</strong> {{ gene_info["Description"] }}</p>
             <p><strong>Gene Type:</strong> {{ gene_info["Gene Type"] }}</p>
-            {% if gene_data %}
-                <p><strong>Chromosome:</strong> {{ gene_data["chromosome"] }}</p>
-                <p><strong>Start:</strong> {{ gene_data["start"] }}</p>
-                <p><strong>End:</strong> {{ gene_data["end"] }}</p>
+
+            {% if gene_info["Pathways"] %}
+                <h2>Pathways</h2>
+                <div class="table-container"> <!-- ✅ Scrollable -->
+                    <table class="ontology-table">
+                        <thead>
+                            <tr><th>Pathway</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for pathway in gene_info["Pathways"] %}
+                                <tr><td>{{ pathway }}</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p><strong>Pathways:</strong> No pathway data available.</p>
             {% endif %}
         </div>
 
-        <!-- ✅ Ontology Table -->
+        <!-- ✅ Updated Ontology Data Display -->
         {% for category, terms in ontology_data.items() %}
             {% if terms %}
                 <h2>{{ category }}</h2>
-                <table class="ontology-table">
-                    <thead>
-                        <tr>
-                            <th>Ontology Term</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for term in terms %}
-                            <tr>
-                                <td>{{ term }}</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                <div class="table-container"> <!-- ✅ Scrollable -->
+                    <table class="ontology-table">
+                        <thead>
+                            <tr><th>Ontology Term</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for term in terms %}
+                                <tr><td>{{ term }}</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             {% else %}
                 <p>No terms available for {{ category }}.</p>
             {% endif %}
