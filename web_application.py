@@ -76,7 +76,7 @@ def search_snp():
             WHERE chr_id = ? AND chr_pos BETWEEN ? AND ?
         """, (chromosome, start_pos, end_pos)).fetchall()
 
-        # ✅ Fetch all unique population regions from the `Populations` table
+        # ✅ Fetch all unique population regions from the Populations table
         populations = conn.execute("""
             SELECT DISTINCT region FROM Populations
         """).fetchall()
@@ -94,6 +94,9 @@ def search_snp():
     flash("No results found.", "error")
     conn.close()
     return redirect(url_for('index'))
+
+
+
 
 # ✅ SNP DETAILS PAGE
 @app.route('/snp/<snp_name>')
@@ -242,7 +245,6 @@ def filter_by_population():
     )
 
 
-# ✅ Route for Downloading Summary Statistics
 @app.route("/download_summary")
 def download_summary():
     """Allows users to download summary statistics as a text file."""
@@ -256,6 +258,8 @@ def download_summary():
 
     print(f"✅ Sending file: {summary_file_path}")
     return send_file(summary_file_path, as_attachment=True, download_name="summary_statistics.txt")
+
+
 
 # Function to fetch Tajima's D values
 def get_tajimas(chromosome, start_pos, end_pos, table_name):
@@ -280,10 +284,9 @@ def get_tajimas(chromosome, start_pos, end_pos, table_name):
     return df  # ✅ Now it actually returns the DataFrame
 
 
-# ✅ Flask Route to Serve the Plot Image
 @app.route('/tajimas_image')
 def tajimas_image():
-    """Generates and serves Tajima's D plot image."""
+    """Generates and serves separate Tajima's D plot images for both Punjabi and Bengali populations."""
     chrom = request.args.get('chromosome', type=int)
     start_pos = request.args.get('start', type=int)
     end_pos = request.args.get('end', type=int)
@@ -291,41 +294,52 @@ def tajimas_image():
     if not chrom or not start_pos or not end_pos:
         return jsonify({"error": "Missing parameters"}), 400
 
-    # Generate the Tajima’s D plot
-    img = plot_tajimas_combined(chrom, start_pos, end_pos)
+    # Generate the separate Tajima’s D plot
+    img = plot_tajimas_separate(chrom, start_pos, end_pos)
 
     # Serve the generated image
     return send_file(img, mimetype='image/png')
 
 
-# ✅ Function to Generate the Tajima's D Plot (Helper Function)
-def plot_tajimas_combined(chromosome, start_pos, end_pos):
-    """Generate and return Tajima's D plot for Punjabi and Bengali populations."""
-    
-    # Fetch data
+
+# Function to Generate the Tajima's D Plot (Helper Function)
+def plot_tajimas_separate(chromosome, start_pos, end_pos):
+    """Generate and return separate Tajima's D plots for Punjabi (PJL) and Bengali (BEB) populations."""
+
+    # Fetch data for both populations
     df_pjl = get_tajimas(chromosome, start_pos, end_pos, "tajimas_pjl")
     df_beb = get_tajimas(chromosome, start_pos, end_pos, "tajimas_BEB")
 
-    plt.figure(figsize=(10, 5))
+    # Create the figure and axes
+    fig, axes = plt.subplots(2, 1, figsize=(10, 10))  # Create two subplots vertically
 
+    # Plot for Punjabi (PJL)
     if not df_pjl.empty:
-        plt.plot(df_pjl["bin_start"], df_pjl["tajimas_d"], marker="o", linestyle="-", color="blue", label="Punjabi (Lahore)")
-    
-    if not df_beb.empty:
-        plt.plot(df_beb["bin_start"], df_beb["tajimas_d"], marker="s", linestyle="--", color="red", label="Bengali (Bangladesh)")
+        axes[0].plot(df_pjl["bin_start"], df_pjl["tajimas_d"], marker="o", linestyle="-", color="blue", label="Punjabi (Lahore)")
+        axes[0].axhline(y=0, color="black", linestyle="--", label="Neutral Selection")
+        axes[0].set_title(f"Tajima's D for Punjabi (PJL) - Chromosome {chromosome} ({start_pos}-{end_pos})")
+        axes[0].set_xlabel("Genomic Position (bp)")
+        axes[0].set_ylabel("Tajima's D")
+        axes[0].legend()
 
-    plt.axhline(y=0, color="black", linestyle="--", label="Neutral Selection")
-    plt.xlabel("Genomic Position (bp)")
-    plt.ylabel("Tajima's D")
-    plt.title(f"Tajima’s D Across Chromosome {chromosome} ({start_pos}-{end_pos})")
-    plt.legend()
-    
+    # Plot for Bengali (BEB)
+    if not df_beb.empty:
+        axes[1].plot(df_beb["bin_start"], df_beb["tajimas_d"], marker="s", linestyle="--", color="red", label="Bengali (Bangladesh)")
+        axes[1].axhline(y=0, color="black", linestyle="--", label="Neutral Selection")
+        axes[1].set_title(f"Tajima's D for Bengali (BEB) - Chromosome {chromosome} ({start_pos}-{end_pos})")
+        axes[1].set_xlabel("Genomic Position (bp)")
+        axes[1].set_ylabel("Tajima's D")
+        axes[1].legend()
+
+    # Save the image to a BytesIO object and return it
     img = io.BytesIO()
+    plt.tight_layout()  # Adjust layout to prevent overlap
     plt.savefig(img, format='png')
-    plt.close()
+    plt.close()  # Close the plot to avoid display issues
     img.seek(0)
 
     return img
+
 
 @app.route('/gene/<gene_name>')
 def gene_ontology(gene_name):
@@ -376,8 +390,5 @@ def gene_ontology(gene_name):
 
 
 
-
-
 if __name__ == '__main__':
     app.run(debug=True)
-
