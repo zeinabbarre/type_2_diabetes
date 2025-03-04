@@ -19,15 +19,29 @@
             font-family: 'Times New Roman', Times, serif;
         }
 
-        /* ✅ Center the large logo above the content */
+        /* ✅ Center the large logo left to the content */
         .logo-container {
-            text-align: center;
-            margin-top: 30px;
-            margin-bottom: 20px;
+             text-align: left; /* Aligns it to the left */
+             margin-left: 150px; /* Adjust this value to move it further left */
+             margin-top: 30px;
+             margin-bottom: 20px;
         }
 
         .logo-container img {
-            width: 400px;
+            width: 400px; /* Set a fixed width */
+            max-width: 400px; /* Ensure it doesn't shrink */
+            height: auto; /* Keep aspect ratio */
+        }
+
+        /* ✅ Hexagon Image on the Right */
+        .hexagon-container {
+            position: absolute;
+            right: 150px;
+            top: 230px;
+        }
+
+        .hexagon-container img {
+            width: 350px;
             height: auto;
         }
 
@@ -66,8 +80,8 @@
 
         /* ✅ Scrollable Table Container */
         .table-container {
-            max-height: 250px; /* ✅ Limits table height */
-            overflow-y: auto; /* ✅ Enables vertical scrolling */
+            max-height: 250px;
+            overflow-y: auto;
             border: 1px solid #ddd;
             border-radius: 8px;
             padding: 5px;
@@ -123,9 +137,14 @@
 </head>
 <body>
 
-    <!-- ✅ Large Centered Logo Above Everything -->
+    <!-- ✅ Gene Ontology Logo (Centered at the Top) -->
     <div class="logo-container">
         <img src="{{ url_for('static', filename='images/gene_ontology.png') }}" alt="Gene Ontology Logo">
+    </div>
+
+    <!-- ✅ Hexagon Image (Right Side) -->
+    <div class="hexagon-container">
+        <img src="{{ url_for('static', filename='images/hexagon_transparent.png') }}" alt="Hexagon Image">
     </div>
 
     <div class="gene-ontology-container">
@@ -136,31 +155,13 @@
             <p><strong>Stable ID:</strong> {{ gene_info["Stable ID"] }}</p>
             <p><strong>Description:</strong> {{ gene_info["Description"] }}</p>
             <p><strong>Gene Type:</strong> {{ gene_info["Gene Type"] }}</p>
-
-            {% if gene_info["Pathways"] %}
-                <h2>Pathways</h2>
-                <div class="table-container"> <!-- ✅ Scrollable -->
-                    <table class="ontology-table">
-                        <thead>
-                            <tr><th>Pathway</th></tr>
-                        </thead>
-                        <tbody>
-                            {% for pathway in gene_info["Pathways"] %}
-                                <tr><td>{{ pathway }}</td></tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <p><strong>Pathways:</strong> No pathway data available.</p>
-            {% endif %}
         </div>
 
         <!-- ✅ Updated Ontology Data Display -->
         {% for category, terms in ontology_data.items() %}
             {% if terms %}
                 <h2>{{ category }}</h2>
-                <div class="table-container"> <!-- ✅ Scrollable -->
+                <div class="table-container">
                     <table class="ontology-table">
                         <thead>
                             <tr><th>Ontology Term</th></tr>
