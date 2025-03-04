@@ -3,43 +3,35 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Filtered SNPs by Population</title>
+<title>SNPs for Population: {{ region }}</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 
 <style>
-/* ✅ General Container Styling */
+/* ✅ General Page Styling */
+body {
+    margin: 0;
+    padding: 0;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+}
+
+/* ✅ Tiny Reduction */
 .container {
-    max-width: 90%;
-    margin: auto;
+    max-width: 76%; /* Reduce slightly from 90% */
+    width: 76%; /* Ensure it remains responsive */
+    margin: 26px auto; /* Keep centered */
     text-align: center;
-    padding-bottom: 50px; /* Increased padding to avoid cut-off */
+    padding: 17px; /* Reduce padding by just 1px */
+    background: none;
+    border-radius: 10px; /* Keep smooth edges */
+    box-shadow: 0px 3px 6px rgba(0, 0, 0, 0.1); /* Soft shadow */
 }
 
-/* ✅ Tajima's D Section */
-.tajima-container {
-    width: 100%;
-    margin: 30px auto;
-    padding: 20px;
-    background: white;
-    border-radius: 10px;
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-}
-
-.tajima-container h2 {
-    margin-bottom: 10px;
-}
-
-.tajima-container img {
-    width: 90%;
-    border: 2px solid #ccc;
-    padding: 15px;
-    background: white;
-    border-radius: 10px;
-}
-
-/* ✅ SNP Table Container */
+/* ✅ SNP Table */
 .snp-table-container {
-    width: 100%;
+    width: 95%;
     margin-top: 30px;
     padding: 20px;
     background: white;
@@ -55,15 +47,8 @@
     margin-top: 20px;
 }
 
-table {
-    width: 100%;
-    border-collapse: collapse;
-    text-align: left;
-    table-layout: fixed;
-}
-
 th {
-    background-color: #cf3847;
+    background-color: var(--table-header-color, #cf3847); /* Default red */
     color: white;
     padding: 12px;
     position: sticky;
@@ -97,6 +82,76 @@ tr:nth-child(even) {
     background-color: #0056b3;
 }
 </style>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    let population = "{{ region }}";  // Get the selected population from Flask
+    let backgroundImage = "/static/images/unknown.png"; // Default
+    let tableHeaderColor = "#cf3847"; // Default red color
+
+    // Map populations to background images and colors
+    const populationStyles = {
+        "African": { 
+            "background": "/static/images/africa.png", 
+            "headerColor": "#8B0000"  // Dark red/burgundy
+        },
+        "American": { 
+            "background": "/static/images/america.png", 
+            "headerColor": "#003366"  // Deep blue
+        },
+        "African American": { 
+            "background": "/static/images/america.png", 
+            "headerColor": "#003366"  // Deep blue
+        },
+        "General Asia": { 
+            "background": "/static/images/general_asia.png", 
+            "headerColor": "#808080"  // Saddle brown
+        },
+        "Indigenous Australian": { 
+            "background": "/static/images/australia.png", 
+            "headerColor": "#DAA520"  // Golden rod
+        },
+        "East Asian": { 
+            "background": "/static/images/east_asia.png", 
+            "headerColor": "#E07B3D"  // Orange red
+        },
+        "Middle Eastern": { 
+            "background": "/static/images/middle_east.png", 
+            "headerColor": "#A0522D"  // Brownish-orange
+        },
+        "Unknown": { 
+            "background": "/static/images/unknown.png", 
+            "headerColor": "#B53A3A"  // Red-ish
+        },
+        "South Asian": {
+            "background":"/static/images/south_asia.png",
+            "headerColor": "#8A9C8F" // Muted-green
+        },
+        "European":{
+            "background":"/static/images/europe.png",
+            "headerColor": "#F6D7B0" // Peachy
+        },
+        
+    };
+
+    // Apply background and table header color dynamically
+    if (populationStyles[population]) {
+        backgroundImage = populationStyles[population].background;
+        tableHeaderColor = populationStyles[population].headerColor;
+    }
+
+    // Set background image
+    document.body.style.backgroundImage = `url('${backgroundImage}')`;
+    document.body.style.backgroundSize = "cover";
+    document.body.style.backgroundPosition = "center";
+    document.body.style.backgroundRepeat = "no-repeat";
+    document.body.style.backgroundAttachment = "fixed";
+
+    // Apply dynamic table header color
+    document.documentElement.style.setProperty('--table-header-color', tableHeaderColor);
+});
+</script>
+
 </head>
 <body>
 
@@ -105,7 +160,6 @@ tr:nth-child(even) {
 
     <p><strong>Showing {{ unique_snp_count }} Unique SNPs</strong> in <strong>{{ region }}</strong>.</p>
 
-    <!-- ✅ Tajima's D Title and Plot at the Top -->
     {% if region.lower() == "south asian" and summary_stats %}
         <div class="tajima-container">
             <h2>Tajima's D Summary Statistics</h2>
@@ -124,7 +178,6 @@ tr:nth-child(even) {
         </div>
     {% endif %}
 
-    <!-- ✅ SNP Table -->
     <div class="snp-table-container">
         <h2>SNP Details</h2>
         <div class="table-container">
@@ -166,7 +219,6 @@ tr:nth-child(even) {
         </div>
     </div>
 
-    <!-- ✅ Buttons at the Bottom -->
     {% if download_url %}
         <a href="{{ download_url }}" class="download-button">Download Summary Statistics</a>
     {% endif %}
@@ -176,4 +228,5 @@ tr:nth-child(even) {
 
 </body>
 </html>
+
 
