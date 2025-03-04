@@ -19,14 +19,14 @@ body {
 
 /* ✅ Tiny Reduction */
 .container {
-    max-width: 76%; /* Reduce slightly from 90% */
-    width: 76%; /* Ensure it remains responsive */
-    margin: 26px auto; /* Keep centered */
+    max-width: 76%;
+    width: 76%;
+    margin: 26px auto;
     text-align: center;
-    padding: 17px; /* Reduce padding by just 1px */
+    padding: 17px;
+    border-radius: 10px;
     background: none;
-    border-radius: 10px; /* Keep smooth edges */
-    box-shadow: 0px 3px 6px rgba(0, 0, 0, 0.1); /* Soft shadow */
+    box-shadow: 0px 3px 6px rgba(0, 0, 0, 0.1);
 }
 
 /* ✅ SNP Table */
@@ -48,7 +48,7 @@ body {
 }
 
 th {
-    background-color: var(--table-header-color, #cf3847); /* Default red */
+    background-color: var(--table-header-color, #cf3847);
     color: white;
     padding: 12px;
     position: sticky;
@@ -85,69 +85,34 @@ tr:nth-child(even) {
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-    let population = "{{ region }}";  // Get the selected population from Flask
-    let backgroundImage = "/static/images/unknown.png"; // Default
-    let tableHeaderColor = "#cf3847"; // Default red color
+    let population = "{{ region }}";  
+    let backgroundImage = "/static/images/unknown.png"; 
+    let tableHeaderColor = "#cf3847"; 
 
-    // Map populations to background images and colors
     const populationStyles = {
-        "African": { 
-            "background": "/static/images/africa.png", 
-            "headerColor": "#8B0000"  // Dark red/burgundy
-        },
-        "American": { 
-            "background": "/static/images/america.png", 
-            "headerColor": "#003366"  // Deep blue
-        },
-        "African American": { 
-            "background": "/static/images/america.png", 
-            "headerColor": "#003366"  // Deep blue
-        },
-        "General Asia": { 
-            "background": "/static/images/general_asia.png", 
-            "headerColor": "#808080"  // Saddle brown
-        },
-        "Indigenous Australian": { 
-            "background": "/static/images/australia.png", 
-            "headerColor": "#DAA520"  // Golden rod
-        },
-        "East Asian": { 
-            "background": "/static/images/east_asia.png", 
-            "headerColor": "#E07B3D"  // Orange red
-        },
-        "Middle Eastern": { 
-            "background": "/static/images/middle_east.png", 
-            "headerColor": "#A0522D"  // Brownish-orange
-        },
-        "Unknown": { 
-            "background": "/static/images/unknown.png", 
-            "headerColor": "#B53A3A"  // Red-ish
-        },
-        "South Asian": {
-            "background":"/static/images/south_asia.png",
-            "headerColor": "#8A9C8F" // Muted-green
-        },
-        "European":{
-            "background":"/static/images/europe.png",
-            "headerColor": "#F6D7B0" // Peachy
-        },
-        
+        "African": { "background": "/static/images/africa.png", "headerColor": "#8B0000" },
+        "American": { "background": "/static/images/america.png", "headerColor": "#003366" },
+        "African American": { "background": "/static/images/america.png", "headerColor": "#003366" },
+        "General Asia": { "background": "/static/images/general_asia.png", "headerColor": "#808080" },
+        "Indigenous Australian": { "background": "/static/images/australia.png", "headerColor": "#DAA520" },
+        "East Asian": { "background": "/static/images/east_asia.png", "headerColor": "#E07B3D" },
+        "Middle Eastern": { "background": "/static/images/middle_east.png", "headerColor": "#A0522D" },
+        "Unknown": { "background": "/static/images/unknown.png", "headerColor": "#B53A3A" },
+        "South Asian": { "background":"/static/images/south_asia.png", "headerColor": "#8A9C8F" },
+        "European": { "background":"/static/images/europe.png", "headerColor": "#F6D7B0" }
     };
 
-    // Apply background and table header color dynamically
     if (populationStyles[population]) {
         backgroundImage = populationStyles[population].background;
         tableHeaderColor = populationStyles[population].headerColor;
     }
 
-    // Set background image
     document.body.style.backgroundImage = `url('${backgroundImage}')`;
     document.body.style.backgroundSize = "cover";
     document.body.style.backgroundPosition = "center";
     document.body.style.backgroundRepeat = "no-repeat";
     document.body.style.backgroundAttachment = "fixed";
 
-    // Apply dynamic table header color
     document.documentElement.style.setProperty('--table-header-color', tableHeaderColor);
 });
 </script>
@@ -160,24 +125,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     <p><strong>Showing {{ unique_snp_count }} Unique SNPs</strong> in <strong>{{ region }}</strong>.</p>
 
-    {% if region.lower() == "south asian" and summary_stats %}
-        <div class="tajima-container">
-            <h2>Tajima's D Summary Statistics</h2>
-            <table>
-                <tr><td><strong>Min:</strong></td><td>{{ summary_stats["min_tajimas_d"] }}</td></tr>
-                <tr><td><strong>Max:</strong></td><td>{{ summary_stats["max_tajimas_d"] }}</td></tr>
-                <tr><td><strong>Mean:</strong></td><td>{{ summary_stats["avg_tajimas_d"] }}</td></tr>
-                <tr><td><strong>Median:</strong></td><td>{{ summary_stats["median_tajimas_d"] }}</td></tr>
-                <tr><td><strong>Std Dev:</strong></td><td>{{ summary_stats["std_tajimas_d"] }}</td></tr>
-            </table>
-        </div>
-
-        <div class="tajima-container">
-            <h2>Tajima's D Plot</h2>
-            <img src="{{ tajima_plot_url }}" alt="Tajima's D Plot">
-        </div>
-    {% endif %}
-
+    <!-- 1️⃣ SNP Table (Now Appears First) -->
     <div class="snp-table-container">
         <h2>SNP Details</h2>
         <div class="table-container">
@@ -219,6 +167,27 @@ document.addEventListener("DOMContentLoaded", function () {
         </div>
     </div>
 
+    <!-- 2️⃣ Summary Statistics (Now Below SNP Table) -->
+    {% if region.lower() == "south asian" and summary_stats %}
+        <div class="tajima-container">
+            <h2>Tajima's D Summary Statistics</h2>
+            <table>
+                <tr><td><strong>Min:</strong></td><td>{{ summary_stats["min_tajimas_d"] }}</td></tr>
+                <tr><td><strong>Max:</strong></td><td>{{ summary_stats["max_tajimas_d"] }}</td></tr>
+                <tr><td><strong>Mean:</strong></td><td>{{ summary_stats["avg_tajimas_d"] }}</td></tr>
+                <tr><td><strong>Median:</strong></td><td>{{ summary_stats["median_tajimas_d"] }}</td></tr>
+                <tr><td><strong>Std Dev:</strong></td><td>{{ summary_stats["std_tajimas_d"] }}</td></tr>
+            </table>
+        </div>
+
+        <!-- 3️⃣ Tajima's D Plot (Now After Summary Statistics) -->
+        <div class="tajima-container">
+            <h2>Tajima's D Plot</h2>
+            <img src="{{ tajima_plot_url }}" alt="Tajima's D Plot">
+        </div>
+    {% endif %}
+
+    <!-- ✅ Buttons Stay in the Same Position -->
     {% if download_url %}
         <a href="{{ download_url }}" class="download-button">Download Summary Statistics</a>
     {% endif %}
