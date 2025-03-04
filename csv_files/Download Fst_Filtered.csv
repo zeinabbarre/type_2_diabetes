@@ -1,0 +1,8 @@
+## Large Fst_File Download
+Due to GitHub’s file size limit, the dataset/file is hosted externally.
+You can download it here: 
+https://drive.google.com/file/d/1r14wf1B39Q1tSVmm5oCk-n821SW3rF-H/view?usp=share_link 
+
+git add README.md
+git commit -m "Added link to large file"
+git push origin main
