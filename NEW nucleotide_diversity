@@ -1,0 +1,14 @@
+CREATE TABLE Nucleotide_Diversity (
+    diversity_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    chromosome TEXT NOT NULL,     -- Chromosome number (1, 2, ... X)
+    bin_start INTEGER NOT NULL,   -- Start of genomic bin
+    bin_end INTEGER NOT NULL,     -- End of genomic bin
+    n_variants INTEGER NOT NULL,  -- Number of variants in the bin
+    pi_value REAL NOT NULL,       -- Nucleotide Diversity (Pi)
+    population TEXT NOT NULL      -- Bengali or Punjabi
+);
+
+
+#### populating the tables ####
+
+
