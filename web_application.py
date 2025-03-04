@@ -146,7 +146,7 @@ def snp_details(snp_name):
 
 @app.route('/filter_by_population', methods=['POST'])
 def filter_by_population():
-    """Filters SNPs by population and displays results. Computes summary stats for South Asian population."""
+    """Filters SNPs by population and displays results. Computes summary stats for Tajima's D and Fst values."""
     population = request.form.get('population')
     snp_ids = request.form.get('snp_ids')
 
@@ -188,48 +188,65 @@ def filter_by_population():
     # ✅ Count unique SNP names
     unique_snp_names = set(snp["snp_name"] for snp in snps)
 
-    summary_stats = None
+    summary_stats = {}
     tajima_plot_url = None
+    fst_plot_url = None
     download_url = None
 
     # ✅ Always Compute Summary Stats & Plot for South Asian Population
     if population.lower() == "south asian" and snps:
+        # ✅ Compute Tajima's D Summary Stats
         stats_query = """SELECT tajimas_d FROM tajimas_BEB"""
         result = conn.execute(stats_query).fetchall()
-
-        # ✅ Extract values and remove None
         tajima_values = [row["tajimas_d"] for row in result if row["tajimas_d"] is not None]
 
         if tajima_values:
-            summary_stats = {
-                "min_tajimas_d": min(tajima_values),
-                "max_tajimas_d": max(tajima_values),
-                "avg_tajimas_d": np.mean(tajima_values),
-                "median_tajimas_d": np.median(tajima_values),
-                "std_tajimas_d": np.std(tajima_values)
+            summary_stats["tajimas_d"] = {
+                "min": min(tajima_values),
+                "max": max(tajima_values),
+                "avg": np.mean(tajima_values),
+                "median": np.median(tajima_values),
+                "std": np.std(tajima_values)
             }
 
-            print("✅ Summary Statistics Computed:", summary_stats)  # Debugging print
+        # ✅ Compute Fst Summary Stats
+        chromosome = snps[0]["chr_id"]
+        start_pos = min([snp["chr_pos"] for snp in snps])
+        end_pos = max([snp["chr_pos"] for snp in snps])
 
-            # ✅ Save summary statistics as a text file
-            static_dir = os.path.join(os.getcwd(), "static")
-            os.makedirs(static_dir, exist_ok=True)
+        fst_query = """SELECT fst_value FROM Fst_Values WHERE chromosome = ? AND position BETWEEN ? AND ?"""
+        fst_result = conn.execute(fst_query, (chromosome, start_pos, end_pos)).fetchall()
+        fst_values = [row["fst_value"] for row in fst_result if row["fst_value"] is not None]
 
-            summary_file_path = os.path.join(static_dir, "summary_statistics.txt")
-            with open(summary_file_path, "w") as f:
-                f.write("Tajima's D Summary Statistics\n")
-                for key, value in summary_stats.items():
-                    f.write(f"{key.replace('_', ' ').title()}: {value:.3f}\n")
+        if fst_values:
+            summary_stats["fst"] = {
+                "min": min(fst_values),
+                "max": max(fst_values),
+                "avg": np.mean(fst_values),
+                "median": np.median(fst_values),
+                "std": np.std(fst_values)
+            }
 
-            download_url = url_for("download_summary")
+        print("✅ Summary Statistics Computed:", summary_stats)  # Debugging print
 
-            # ✅ Generate Tajima’s D plot only for South Asian SNPs
-            if snps:
-                chromosome = snps[0]["chr_id"]
-                start_pos = min([snp["chr_pos"] for snp in snps])
-                end_pos = max([snp["chr_pos"] for snp in snps])
+        # ✅ Save summary statistics as a text file
+        static_dir = os.path.join(os.getcwd(), "static")
+        os.makedirs(static_dir, exist_ok=True)
 
-                tajima_plot_url = url_for('tajimas_image', chromosome=chromosome, start=start_pos, end=end_pos)
+        summary_file_path = os.path.join(static_dir, "summary_statistics.txt")
+        with open(summary_file_path, "w") as f:
+            f.write("Tajima's D & Fst Summary Statistics\n")
+            for key, values in summary_stats.items():
+                f.write(f"{key.upper()} Summary:\n")
+                for stat, value in values.items():
+                    f.write(f"{stat.title()}: {value:.3f}\n")
+                f.write("\n")
+
+        download_url = url_for("download_summary")
+
+        # ✅ Generate Plots
+        tajima_plot_url = url_for('tajimas_image', chromosome=chromosome, start=start_pos, end=end_pos)
+        fst_plot_url = url_for('fst_image', chromosome=chromosome, start=start_pos, end=end_pos)
 
     conn.close()
 
@@ -239,10 +256,57 @@ def filter_by_population():
         region=population,
         unique_snp_count=len(unique_snp_names),
         mapped_genes=mapped_genes,
-        summary_stats=summary_stats,  # ✅ Always passed
-        tajima_plot_url=tajima_plot_url,  # ✅ Always passed
-        download_url=download_url  # ✅ Always passed
+        summary_stats=summary_stats,  
+        tajima_plot_url=tajima_plot_url,  
+        fst_plot_url=fst_plot_url,  
+        download_url=download_url  
     )
+
+@app.route('/fst_image')
+def fst_image():
+    """Generates and serves the Fst plot for a given chromosome and range."""
+    chrom = request.args.get('chromosome', type=int)
+    start_pos = request.args.get('start', type=int)
+    end_pos = request.args.get('end', type=int)
+
+    if not chrom or not start_pos or not end_pos:
+        return jsonify({"error": "Missing parameters"}), 400
+
+    img = plot_fst_values(chrom, start_pos, end_pos)
+    return send_file(img, mimetype='image/png')
+
+
+def plot_fst_values(chromosome, start_pos, end_pos):
+    """Generates an Fst plot for the given chromosome range."""
+    conn = get_db_connection()
+    query = """
+    SELECT position, fst_value 
+    FROM Fst_Values 
+    WHERE chromosome = ? AND position BETWEEN ? AND ?
+    ORDER BY position;
+    """
+
+    df = pd.read_sql_query(query, conn, params=(chromosome, start_pos, end_pos))
+    conn.close()
+
+    if df.empty:
+        return None  
+
+    plt.figure(figsize=(10, 5))
+    plt.scatter(df["position"], df["fst_value"], c="purple", alpha=0.7, label="Fst Values")
+    plt.axhline(y=0, color="black", linestyle="--", label="Neutral Selection")
+    plt.xlabel("Genomic Position (bp)")
+    plt.ylabel("Fst Value")
+    plt.title(f"Fst Plot - Chromosome {chromosome} ({start_pos}-{end_pos})")
+    plt.legend()
+    plt.grid(True)
+
+    img = io.BytesIO()
+    plt.savefig(img, format='png')
+    plt.close()
+    img.seek(0)
+
+    return img
 
 
 @app.route("/download_summary")
