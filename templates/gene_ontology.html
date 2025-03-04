@@ -21,16 +21,15 @@
 
         /* ✅ Center the large logo left to the content */
         .logo-container {
-             text-align: left; /* Aligns it to the left */
-             margin-left: 150px; /* Adjust this value to move it further left */
+             text-align: left;
+             margin-left: 150px;
              margin-top: 30px;
              margin-bottom: 20px;
         }
 
         .logo-container img {
-            width: 400px; /* Set a fixed width */
-            max-width: 400px; /* Ensure it doesn't shrink */
-            height: auto; /* Keep aspect ratio */
+            width: 400px;
+            height: auto;
         }
 
         /* ✅ Hexagon Image on the Right */
@@ -88,7 +87,7 @@
             box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
         }
 
-        /* ✅ Ontology Table */
+        /* ✅ Table Styling */
         .ontology-table {
             width: 100%;
             border-collapse: collapse;
@@ -137,7 +136,7 @@
 </head>
 <body>
 
-    <!-- ✅ Gene Ontology Logo (Centered at the Top) -->
+    <!-- ✅ Gene Ontology Logo (Left Side) -->
     <div class="logo-container">
         <img src="{{ url_for('static', filename='images/gene_ontology.png') }}" alt="Gene Ontology Logo">
     </div>
@@ -155,9 +154,27 @@
             <p><strong>Stable ID:</strong> {{ gene_info["Stable ID"] }}</p>
             <p><strong>Description:</strong> {{ gene_info["Description"] }}</p>
             <p><strong>Gene Type:</strong> {{ gene_info["Gene Type"] }}</p>
+
+            {% if gene_info["Pathways"] %}
+                <h2>Pathways</h2>
+                <div class="table-container">
+                    <table class="ontology-table">
+                        <thead>
+                            <tr><th>Pathway</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for pathway in gene_info["Pathways"] %}
+                                <tr><td>{{ pathway }}</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p><strong>Pathways:</strong> No pathway data available.</p>
+            {% endif %}
         </div>
 
-        <!-- ✅ Updated Ontology Data Display -->
+        <!-- ✅ Ontology Data Display -->
         {% for category, terms in ontology_data.items() %}
             {% if terms %}
                 <h2>{{ category }}</h2>
