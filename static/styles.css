@@ -1,19 +1,14 @@
 /* ✅ Global styles */
 body {
-    background-image: url("/static/images/image.png"); /* Ensure correct path */
+    background-image: url("/static/images/image.png");
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
-    height: 100vh;
+    background-attachment: fixed;
+    min-height: auto; /* ✅ Allow the page to expand */
     margin: 0;
     padding: 0;
-    display: flex;
-    align-items: center;
-    text-align: center;
-    flex-direction: column;
 }
-
-
 
 /* ✅ Header styling */
 .header {
@@ -22,173 +17,131 @@ body {
     align-items: center;
     width: 100%;
     padding: 20px;
-    position: absolute;
-    top: 0;
-    left: 0;
     background: rgba(0, 0, 0, 0.3);
     color: white;
     font-weight: bold;
 }
 
-/* ✅ Title in header */
-.header-title {
-    font-size: 2.5rem;
-    margin-left: 50px;
-}
-
-/* ✅ Divider between title and description */
-.header-divider {
-    width: 2px;
-    height: 100px;
-    background-color: white;
-    margin: 0 20px;
-}
-
-/* ✅ Additional information section */
-.header-info {
-    font-size: 1.4rem;
-    margin-right: 50px;
-}
-
-/* ✅ Main content container */
+/* ✅ Main content container - Remove absolute positioning */
 .container {
-    width: 50%;
-    margin: auto;
+    width: 80%; /* ✅ Allow more content to fit */
+    max-width: 1200px; /* ✅ Set a max width */
+    margin: 50px auto; /* ✅ Center the container */
     padding: 20px;
-    background: rgba(255, 255, 255, 0.85);
+    background: rgba(255, 255, 255, 0.9);
     border-radius: 10px;
     text-align: center;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
     box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    position: relative; /* ✅ Avoid absolute positioning */
 }
 
-/* ✅ Search box styling */
-.search-box {
-    padding: 12px;
-    width: 80%;
-    font-size: 16px;
-    border-radius: 5px;
-    border: 1px solid #ccc;
+/* ✅ Ensure plots are fully visible */
+.tajima-container {
+    width: 100%;
+    margin: 30px auto;
+    padding: 20px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.tajima-container img {
+    width: 100%; /* ✅ Ensure full width */
+    max-width: 1000px;
     display: block;
-    margin: 10px auto;
-}
-
-/* ✅ Button styling */
-button {
-    padding: 12px 20px;
-    font-size: 16px;
-    border-radius: 5px;
-    background-color: #007BFF;
-    color: white;
-    border: none;
-    cursor: pointer;
-    display: block;
-    margin: 15px auto;
-    transition: background-color 0.3s ease;
-}
-
-/* ✅ Button hover effect */
-button:hover {
-    background-color: #0056b3;
-}
-
-/* ✅ Instructions box */
-.instruction-box {
-    margin-top: 15px;
-    background: rgba(0, 0, 0, 0.12);
-    padding: 12px;
-    border-radius: 5px;
-    display: inline-block;
-    color: black;
-    font-size: 1.2rem;
-}
-
-.results-page {
-    background-image: url("/static/images/results_background.png");
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    height: 100vh;
-    margin: 0;
-    padding: 0;
-}
-
-/* ✅ Results box */
-.results-box {
-    background: rgba(255, 255, 255, 0.85);
-    padding: 15px;
-    color: black;
-    border-radius: 5px;
-    display: inline-block;
-}
-
-/* ✅ Group logo */
-.group-logo {
-    position: absolute;
-    bottom: 15px;
-    left: 15px;
-    width: 180px;
-    height: auto;
-}
-
-/* ✅ Error message styling */
-.error {
-    color: red;
-    font-size: 1.2rem;
-    font-weight: bold;
-}
-
-/* ✅ Links styling */
-a {
-    color: #007BFF;
-    text-decoration: none;
-    font-weight: bold;
-}
-
-/* ✅ Link hover effect */
-a:hover {
-    text-decoration: underline;
-}
-
-/* ✅ Ontology Table */
-.ontology-table {
-    width: 80%;
     margin: 20px auto;
+    border: 2px solid #ccc;
+    border-radius: 10px;
+}
+
+/* ✅ SNP Table */
+.snp-table-container {
+    width: 100%;
+    margin-top: 30px;
+    padding: 20px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* ✅ Table Styling */
+.table-container {
+    max-height: 500px;
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    margin-top: 20px;
+}
+
+table {
+    width: 100%;
     border-collapse: collapse;
-    background: rgba(255, 255, 255, 0.9);
+    text-align: left;
 }
 
-.ontology-table th, .ontology-table td {
-    border: 1px solid black;
-    padding: 10px;
-    text-align: center;
-}
-
-.ontology-table th {
-    background-color: #007BFF;
+th {
+    background-color: #cf3847;
     color: white;
-    font-size: 1.2rem;
+    padding: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 2;
 }
 
-.ontology-table tr:nth-child(even) {
+th, td {
+    padding: 12px;
+    border: 1px solid #ddd;
+}
+
+tr:nth-child(even) {
     background-color: #f2f2f2;
 }
 
-.download-button {
-    display: inline-block;
-    margin-top: 10px;
-    padding: 10px;
+/* ✅ Download & Back Buttons */
+.download-button, .back-button {
+    display: block;
+    padding: 12px 20px;
+    margin: 30px auto;
     font-size: 16px;
     border-radius: 5px;
-    background-color: #28a745;
+    background-color: #007BFF;
     color: white;
     text-decoration: none;
-    font-weight: bold;
+    width: fit-content;
 }
 
-.download-button:hover {
-    background-color: #218838;
+.download-button:hover, .back-button:hover {
+    background-color: #0056b3;
+}
+
+/* ✅ Make the "Filter SNPs" button match the other buttons */
+.filter-button {
+    display: block;
+    padding: 10px 20px;
+    margin: 15px auto;
+    font-size: 14px;
+    font-family: "Times New Roman", serif;  /* ✅ Match the font */
+    border-radius: 5px;
+    background-color: #007BFF; /* Same as back button */
+    color: white;
+    border: none;
+    text-align: center;
+    text-decoration: none;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+/* ✅ Button Hover Effect */
+.filter-button:hover {
+    background-color: #0056b3;
+    transform: scale(1.05);
+}
+
+th {
+    background-color: var(--table-header-color, #cf3847); /* Default red */
+    color: white;
+    padding: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 2;
 }
