@@ -4,6 +4,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Choose a Population</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+
+    <style>
+        body {
+            background-image: url("{{ url_for('static', filename='images/new_population.png') }}");
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .container {
+            width: 60%;
+            max-width: 650px;
+            margin: auto; 
+            padding: 30px;
+            background: #c7e7cb; /* ✅ Set container background to your color */
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+            position: absolute;
+            top: 50%;
+            left: 47%;
+            transform: translate(-50%, -50%);
+}
+
+    </style>
 </head>
 <body>
     <div class="container">
@@ -30,3 +55,4 @@
     </div>
 </body>
 </html>
+
