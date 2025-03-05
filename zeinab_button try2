@@ -144,7 +144,10 @@ def filter_by_population():
             f.write("Plotted SNPs (Chromosome, Position, Tajima_BEB, Tajima_PJL, Fst):\n")
             f.write("Chromosome\tPosition\tTajima_BEB\tTajima_PJL\tFst\n")
 
-            for snp in snps:
+            # Remove duplicate SNPs by using a dictionary to ensure uniqueness based on (chr_id, chr_pos)
+            unique_snps = { (snp['chr_id'], snp['chr_pos']): snp for snp in snps }
+
+            for snp in unique_snps.values():  # Use unique SNPs here
                 tajima_beb = get_tajima_for_position(snp["chr_pos"], beb_tajima_values)
                 tajima_pjl = get_tajima_for_position(snp["chr_pos"], pjl_tajima_values)
                 fst_value = next((row["fst_value"] for row in fst_result if row["position"] == snp["chr_pos"]), "N/A")
