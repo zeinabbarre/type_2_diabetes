@@ -3,8 +3,8 @@ import sqlite3
 
 
 # File paths
-csv_file_path = "/Users/zeinabbarre/Desktop/type_2_diabetes/csv_files/combined_TajimaD_sorted_BEB.csv"
-db_path = "/Users/zeinabbarre/Desktop/type_2_diabetes/instance/db.db"
+csv_file_path = "/mnt/c/Users/Hp EliteBook 840 G3/OneDrive/Desktop/type_2_diabetes/csv_files/combined_TajimaD_sorted_BEB.csv"
+db_path = "/mnt/c/Users/Hp EliteBook 840 G3/OneDrive/Desktop/type_2_diabetes/instance/db.db"
 
 
 # Load CSV file
