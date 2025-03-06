@@ -29,16 +29,6 @@ CREATE TABLE SNP_Gene (
     FOREIGN KEY (gene_id) REFERENCES Genes(gene_id) ON DELETE CASCADE
 );
 
-CREATE TRIGGER auto_assign_gene_id
-BEFORE INSERT ON SNPs
-FOR EACH ROW
-BEGIN
-    UPDATE SNPs
-    SET gene_id = (
-        SELECT gene_id FROM SNP_Gene WHERE snp_id = NEW.snp_id
-    )
-    WHERE snp_id = NEW.snp_id;
-END;
 
 
 CREATE TABLE Ontology (
