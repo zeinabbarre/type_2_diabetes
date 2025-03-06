@@ -66,6 +66,7 @@ You should see output like:
 Open your browser and go to http://127.0.0.1:5000 to use the application.
 
 
-
+You might recieve an error saying you do not have matplotlib/pandas - make sure you are in the virtual environment and have activated it.
+If it still doesnt work, use pip install for the module/library not found. 
 
 
