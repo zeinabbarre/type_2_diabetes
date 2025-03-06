@@ -11,9 +11,7 @@ import numpy as np
 
 app = Flask(__name__, static_folder='static', static_url_path='/static')
 app.secret_key = 'supersecretkey'  # Needed for flashed messages
-BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-DB_PATH = os.path.join(BASE_DIR, "instance", "db.db")  # ✅ Universal database path
-
+DB_PATH = "/Users/zeinabbarre/Desktop/type_2_diabetes/instance/db.db"
 
 # ✅ Function to Establish Database Connection
 def get_db_connection():
