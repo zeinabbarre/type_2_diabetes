@@ -1,3 +1,108 @@
+🧬 Type 2 Diabetes SNP Explorer
+A Flask web application for exploring SNP (Single Nucleotide Polymorphism) data related to Type 2 Diabetes in various populations. The application allows users to search SNPs by name, genomic coordinates, or gene, view population-specific SNP data, and analyze Tajima's D and Fst values.
+
+📂 Project Structure
+Your folder structure should look like this:
+
+graphql
+Copy
+Edit
+type_2_diabetes/
+│── instance/             # Stores the SQLite database (db.db)
+│── csv_files/            # Folder for storing all CSV files
+│── py_codes/             # Python scripts (avoid naming it "py codes" due to a previous mistake)
+│── templates/            # HTML templates for Flask
+│── static/               # Static assets like CSS, images, and JavaScript
+│   ├── images/           # Stores background images and logos
+│── web_application.py    # Main Flask application
+│── requirements.txt      # Python dependencies
+│── README.md             # Project documentation (this file)
+
+
+Installation & Setup
+Clone the Repository
+First, navigate to the directory where you want to store the project:
+
+cd ~/Desktop  # Change this to your desired directory
+git clone 
+cd type_2_diabetes
+
+Set Up a Virtual Environment
+Create and activate a virtual environment:
+python3 -m venv venv
+source venv/bin/activate  # macOS/Linux
+venv\Scripts\activate     # Windows
+3️⃣ Install Required Dependencies
+bash
+Copy
+Edit
+pip install -r requirements.txt
+If you don’t have requirements.txt, generate one:
+
+bash
+Copy
+Edit
+pip freeze > requirements.txt
+4️⃣ Set Up the Database
+Navigate to the instance folder:
+
+bash
+Copy
+Edit
+cd instance
+sqlite3 db.db  # Create the database
+Verify the database was created:
+
+sqlite
+Copy
+Edit
+sqlite> .database
+This should output the path to your db.db file, e.g.,
+
+bash
+Copy
+Edit
+/Users/zeinabbarre/Desktop/type_2_diabetes/instance/db.db
+5️⃣ Create Database Tables
+Copy and paste the CREATE TABLE commands from the schema_tables.sql file (available on GitHub) into your SQLite prompt.
+
+Make sure to include any UPDATE commands as well.
+
+6️⃣ Download and Import CSV Files
+Download all CSV files from GitHub and save them in the csv_files/ folder inside your project.
+
+The fst_values_cleaned.csv file is available via Google Drive due to its size. Download it manually and save it as:
+
+type_2_diabetes/csv_files/fst_values_cleaned.csv
+7️⃣ Populate the Database
+Use the provided Python scripts to populate your database. For example, if there's a script populate_db.py, run:
+
+bash
+Copy
+Edit
+python py_codes/populate_db.py
+🚀 Running the Application
+Once everything is set up, start the Flask app:
+
+bash
+Copy
+Edit
+python web_application.py
+You should see output like:
+
+csharp
+Copy
+Edit
+ * Running on http://127.0.0.1:5000
+Open your browser and go to http://127.0.0.1:5000 to use the application.
+
+
+
+
+
+
+
+
 The strucutre of your folders should be the same as this. 
 Open up vscode and create a type_2_diabetes folder and in it create an instance folder. This will be the path that you will quote when asked for the database path.
 The databse will 
