@@ -120,3 +120,37 @@ CREATE TABLE tajimas_BEB (
     tajimas_d REAL
 );
 
+CREATE TRIGGER normalize_population_region
+BEFORE INSERT ON Populations
+FOR EACH ROW
+BEGIN
+    -- Normalize common inconsistencies in region names
+    SELECT CASE
+        WHEN NEW.region IN ('South Asia', 'South asia', 'S. Asia') THEN
+            SET NEW.region = 'South Asian';
+        WHEN NEW.region IN ('East Asia', 'E. Asia', 'Eastern Asia') THEN
+            SET NEW.region = 'East Asian';
+        WHEN NEW.region IN ('European', 'Europe') THEN
+            SET NEW.region = 'European';
+        WHEN NEW.region IN ('African', 'Africa') THEN
+            SET NEW.region = 'African';
+    END;
+END;
+
+
+CREATE TRIGGER normalize_snp_population
+BEFORE INSERT ON SNP_Population
+FOR EACH ROW
+BEGIN
+    -- Normalize common inconsistencies in population names
+    SELECT CASE
+        WHEN NEW.population IN ('South Asia', 'South asia', 'S. Asia') THEN
+            SET NEW.population = 'South Asian';
+        WHEN NEW.population = 'General Asia' THEN
+            SET NEW.population = 'General Asian';
+        WHEN NEW.population = 'East Asia' THEN
+            SET NEW.population = 'East Asian';
+    END;
+END;
+
+
