@@ -1,0 +1,29 @@
+****Filtered the ALL chromosome file to contain only bengali sample using bengali sample id****
+for i in {1..22}; do
+    bcftools view -S beb_samples_noheader.txt --force-samples -Oz -o filtered_ALL.chr*.vcf.gz
+    bcftools index filtered_ALL.chr*.vcf.gz
+done
+
+****Filtered the ALL chromosome file to contain only punjabi sample using punjabi sample id****
+for i in {1..22}; do
+    bcftools view -S punjabi_sample.txt --force-samples -Oz -o filtered_ALL.chr*.vcf.gz
+    bcftools index filtered_ALL.chr*.vcf.gz
+done
+
+**merged all the bengali files***
+bcftools concat -Oz -o merged.vcf.gz filtered_ALL.chr*.vcf.gz
+
+bcftools index merged.vcf.gz
+
+***merged all the punjabi files***
+bcftools concat -Oz -o punjabi_merged.vcf.gz filtered_ALL.chr*.vcf.gz
+
+bcftools index merged.vcf.gz
+
+***merged both bengali and punjabi filtered files***
+bcftools concat merged_all_chromosomes.vcf punjabi_merged.vcf.gz -O z -o merged_final.vcf.gz
+
+bcftools index merged_final.vcf.gz
+
+***Run Fst***
+vcftools --gzvcf merged_final.vcf.gz --maf 0.05 --weir-fst-pop beb_samples_filtered.txt --weir-fst-pop punjabi_sample_ids.txt --out fst_filtered
