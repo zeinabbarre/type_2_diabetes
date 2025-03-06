@@ -39,14 +39,19 @@ def load_gene_data():
     missing_columns = expected_columns - set(df.columns)
     if missing_columns:
         raise ValueError(f"❌ Missing columns in CSV: {missing_columns}")
+    
+    print("✅ CSV file loaded successfully!")  # Debugging print
+    print(df.head())  # Print first few rows to verify data
 
     return df
 
-# ✅ Insert ontology data into the database
+# ✅ Insert ontology data into the database with debugging
 def insert_ontology_data():
     df = load_gene_data()
     conn = get_db_connection()
     cursor = conn.cursor()
+
+    print("✅ Database connection established!")  # Debugging print
 
     for _, row in df.iterrows():
         gene_name = row['gene name'].strip()
@@ -64,16 +69,30 @@ def insert_ontology_data():
             cellular_component = row['cellular_component'] if pd.notna(row['cellular_component']) else ""
             pathway = row['pathway'] if 'pathway' in df.columns and pd.notna(row['pathway']) else ""
 
-            # ✅ Insert into Ontology table (1 row per gene)
-            cursor.execute("""
-                INSERT INTO Ontology (gene_id, gene_stable_id, description, gene_type, 
-                                     molecular_function, biological_process, cellular_component, pathway) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?);
-            """, (gene_id, row['gene stable id'], row['description'], row['gene type'], 
-                  molecular_function, biological_process, cellular_component, pathway))
+            try:
+                # ✅ Insert into Ontology table (1 row per gene)
+                cursor.execute("""
+                    INSERT INTO Ontology (gene_id, gene_stable_id, description, gene_type, 
+                                         molecular_function, biological_process, cellular_component, pathway) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+                """, (gene_id, row['gene stable id'], row['description'], row['gene type'], 
+                      molecular_function, biological_process, cellular_component, pathway))
+                print(f"✅ Inserted gene {gene_name} (ID: {gene_id}) into Ontology table.")  # Debugging print
+            except sqlite3.Error as e:
+                print(f"❌ SQL Error for gene {gene_name}: {e}")
+        else:
+            print(f"⚠️ Gene '{gene_name}' not found in Genes table.")  # Debugging print
 
     conn.commit()
     cursor.close()
     conn.close()
 
     print("✅ Gene Ontology Terms and Pathways successfully inserted into the Ontology table!")
+
+@app.route('/')
+def index():
+    """Renders the homepage."""
+    return render_template('index.html')
+
+if __name__ == '__main__':
+    app.run(debug=True)
