@@ -12,7 +12,10 @@ Check that you have correctly created the databse by typing sqlite> .database
 
 Copy the CREATE TABLES commands found in the schema tables file on Github into sqlite. Make sure to copy everything including the UPDATE commands.
 
-Download and save all the csv_files from GitHub to the csv_files folder within your own type_2_diabetes folder. 
+Download and save all the csv_files from GitHub to the csv_files folder within your own type_2_diabetes folder.
+The csv file used to populate the Fst_Values table is in the csv_files folder and is a google drive link due to the size of the file. 
+Please download it and save it as fsdt_values_cleaned.csv.
+
 
 In VScode, within the type_2_diabetes folder, create a web_application.py file. Copy and paste the code from the web_application.py file from Github.
 Move to the py_codes folder and create all of the .py files that are in the py_codes and copy and paste the code.
