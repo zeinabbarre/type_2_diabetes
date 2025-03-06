@@ -59,7 +59,7 @@ print(df.head())
 df_cleaned = df.dropna(subset=["TajimaD"])
 
 # Save the cleaned data to a new CSV file
-df_cleaned.to_csv("cleaned_tajima_PJL_file.csv", index=False)
+df_cleaned.to_csv("combined_TajimaD_sorted_BEB.csv", index=False)
 
 #### STEP 2 ####
 # CREATE SQLITE3 SCHEMA FOR THE CSV FILES # # PLEASE FOLLOW THE "Schemastable" file in the repository #
