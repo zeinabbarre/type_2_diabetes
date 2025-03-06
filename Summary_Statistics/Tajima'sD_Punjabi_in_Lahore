@@ -1,10 +1,8 @@
 #### STEP 1 ####
-## DOWNLOADING THE URLs LIST AND GENOMIC DATA FROM 1000 GENOMES FOR PJL(punjabi in Lahore) AND BEB(Bengali in bangladesh) ##
+## DOWNLOADING THE URLs LIST AND GENOMIC DATA FROM 1000 GENOMES FOR PJL(punjabi in Lahore) ##
 
 https://www.internationalgenome.org/data-portal/population/PJL # for downloading the URLs list for punjabi population select the 
 "1000 genomes phase 3 release" and select "variants" to access the compressed .VCF files. #
-
-https://www.internationalgenome.org/data-portal/population/BEB # follow the same for Bengali data download #
 
 ## download the server that deals with the fttp:// as these files cannot be downloaded directly ##
 https://filezilla-project.org. # download the filezilla client version #
@@ -24,7 +22,7 @@ awk -F'\t' '{print $1}' igsr_Punjabi\ in\ Lahore\,\ Pakistan_undefined.tsv.tsv >
 wget -i _urls.txt
 
 # After the files have downloaded they need to be filtered for the population specific samples as the vcf files are multi ancestry samples #
-# downlaod the sample list from PJL and BEB and use this as a filter for cleaning the multi ancestry vcf file to only give samples for bengali and punjabi population # 
+# downlaod the sample list from PJL and BEB and use this as a filter for cleaning the multi ancestry vcf file to only give samples for punjabi population # 
 for file in *.vcf.gz; do   bcftools view -S samples.tsv --force-samples "$file" -o "filtered_${file}"; done   # filter VCF files using bcftools #
 
 # index the filtered files for easy parsing of data using command lines tabix to chnage them to .tbi indexed files. Do a loop for all the files #
@@ -63,10 +61,10 @@ df_cleaned = df.dropna(subset=["TajimaD"])
 df_cleaned.to_csv("cleaned_tajima_PJL_file.csv", index=False)
 
 #### STEP 2 ####
-# CREATE SQLITE3 SCHEMA FOR THE CSV FILES # # FOLLOW THE "Schemastable" file in the repository #
+# CREATE SQLITE3 SCHEMA FOR THE CSV FILES # # PLEASE FOLLOW THE "Schemastable" file in the repository #
 
 #### STEP 3 ####
-# populate the schemas # # FOLLOW THE "PY_CODES" FOLDER for populating the Tajimas_BEB and Tajimans_PJL schemas #
+# populate the schemas # # PLEASE FOLLOW THE "PY_CODES" FOLDER for populating the Tajimans_PJL schema #
 
 ## Visualise the data using Pythons Matplotlib library, Pandas, and Numpy to analyse and visualise the data ##
 
@@ -74,4 +72,4 @@ df_cleaned.to_csv("cleaned_tajima_PJL_file.csv", index=False)
 ## MAKING FUNCTIONS FOR PLOTTING AND INTERGARTING DATA AND TO REDUCE REDUNDANCY ##
 # PLEASE FOLLOW THE "web_app" file FOR THE FUNCTIONS FOR DATA VISUALISATION #
 
-## REPEAT FOR BEB POPULATION ##
+
