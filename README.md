@@ -29,3 +29,7 @@ Move to the templates folder and create all of the hmtml files that are in the G
 Edit the paths to your csv files and database to make sure they are correct. To find your database path in sqlite, type .database
 To find which file to use to populate the table, check the .py file you are trying to use.
 E.g. if i am using the populating_snp_table.py, i will check the csv file path and choose unique_snps.csv. 
+
+Install the dependencies from the requirements.txt file.
+Troubleshooting: although matplotlib is present in the requirements.txt file you might have to manually install it with pip install matplotlib.
+
