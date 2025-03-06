@@ -1,0 +1,558 @@
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_file
+import sqlite3
+import re
+import pandas as pd
+import matplotlib
+matplotlib.use('Agg')  # Force non-GUI backend before importing pyplot
+import matplotlib.pyplot as plt
+import io
+import os
+import numpy as np 
+
+app = Flask(__name__, static_folder='static', static_url_path='/static')
+app.secret_key = 'supersecretkey'  # Needed for flashed messages
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+DB_PATH = os.path.join(BASE_DIR, "instance", "db.db")  # Universal database path
+
+
+# Function to Establish Database Connection
+def get_db_connection():
+    conn = sqlite3.connect(DB_PATH) # Connects to the SQlite database using the specified path #
+    conn.row_factory = sqlite3.Row  # Enables dictionary-like access row data #
+    return conn # Returns the database connection object #
+
+@app.route('/') # Defines the route for the home page of the web application #
+def index(): # Handles requests to the root URL ('/').
+    """Renders the homepage."""
+    return render_template('index.html') #  Renders and returns the homepage template (index.html) 
+
+# SEARCH FUNCTIONALITY (SNP, Gene, Genomic Coordinates)
+@app.route('/search_snp', methods=['POST']) # Define the route for searching SNPs with POST method
+def search_snp():
+    """Handles search for SNPs, genes, or genomic coordinates."""
+    query = request.form['search_query'].strip() # Get the search query from the form input and remove leading/trailing spaces
+    conn = get_db_connection() # Establishes a database connection
+
+# Searches by SNP Name
+    snp = conn.execute("""
+        SELECT snp_name, chr_id, chr_pos
+        FROM SNPs
+        WHERE LOWER(snp_name) = LOWER(?)
+    """, (query,)).fetchone() # Queries database for an SNP (Single Nucleotide Polymorphism) matching the provided name (case insensitive)
+
+    if snp:
+        conn.close()   # Closes the database connection
+        return redirect(url_for('snp_details', snp_name=snp['snp_name'])) # # Redirects to the SNP details page
+
+# Searches by Gene Name
+    gene = conn.execute("SELECT * FROM Genes WHERE LOWER(gene_name) = LOWER(?)", (query,)).fetchone()
+# Queries the database for a gene matching the provided name (case insensitive)
+    if gene: 
+         # Retrieves all SNPs associated with the found gene
+        snps = conn.execute("""
+            SELECT s.snp_id, s.snp_name, s.chr_id, s.chr_pos
+            FROM SNPs s
+            JOIN SNP_Gene sg ON s.snp_id = sg.snp_id
+            WHERE sg.gene_id = ?
+        """, (gene['gene_id'],)).fetchall()
+
+        #Fetch distinct populations from Populations table
+        populations = conn.execute("""
+        SELECT DISTINCT region FROM Populations
+    """).fetchall()
+        populations = [pop['region'] for pop in populations] # Convert fetched results into a list of region names
+
+        conn.close()  # Closes the database connection
+        return render_template('filtered_snps.html', snps=snps, populations=populations, query=query)  # Render the results in the 'filtered_snps.html' template
+    
+
+# Search by Genomic Coordinates # Checks if the query follows the genomic coordinate pattern (e.g., "1:1000-2000")
+    match = re.match(r"^(\d+):(\d+)-(\d+)$", query)
+    if match:
+        chromosome, start_pos, end_pos = match.groups() # Extracts chromosome, start position, and end position
+        start_pos, end_pos = int(start_pos), int(end_pos) # # Convert start and end positions to integers
+
+ # Fetch SNPs in the given genomic region
+        snps = conn.execute("""
+            SELECT snp_id, snp_name, chr_id, chr_pos
+            FROM SNPs 
+            WHERE chr_id = ? AND chr_pos BETWEEN ? AND ?
+        """, (chromosome, start_pos, end_pos)).fetchall()
+
+ # Fetch all unique population regions from the Populations table
+        populations = conn.execute("""
+            SELECT DISTINCT region FROM Populations
+        """).fetchall()
+        populations = [pop["region"] for pop in populations] #  Converts fetched results into a list of region names
+
+        conn.close() # Closes the database connection
+
+        if snps:
+            return render_template('filtered_snps.html', snps=snps, populations=populations, query=query)
+            # Renders the results if SNPs are found in the given genomic region
+
+    flash("No SNPs found in the specified region.", "error") # Shows an error message if no SNPs are found
+    return redirect(url_for('index')) # Redirects user back to the main page
+
+
+    flash("No results found.", "error") # Shows an error message if no matches were found for SNP name, gene name, or genomic coordinates
+    conn.close() # closes database connection
+    return redirect(url_for('index')) # Redirects back to the main page
+
+
+# Pathway to SNP details page 
+@app.route('/snp/<snp_name>') # Defines a Flask route for displaying details of a specific SNP.
+# <snp_name> is a dynamic URL parameter that represents the SNP name being requested.
+def snp_details(snp_name):
+    """Displays detailed SNP information along with mapped genes and populations (without Population column and duplicates)."""
+    conn = get_db_connection() # Opens a connection to the database to retrieve the necessary SNP data.
+
+    # Fetches SNP details
+    snp = conn.execute("""
+        SELECT * FROM SNPs WHERE snp_name = ?
+    """, (snp_name,)).fetchone() # Queries the database for an SNP that matches the given snp_name. 
+    # Uses fetchone() to retrieve a single record.
+
+    # If SNP is not found, return an error 
+    if not snp: 
+        conn.close() # If no SNP is found, the connection is closed
+        flash(f"SNP '{snp_name}' not found.", "error") # An error message is displayed using flash().
+        return redirect(url_for('index')) # The user is redirected back to the homepage.
+
+    # Gets mapped genes
+    mapped_genes = conn.execute("""
+        SELECT g.gene_name 
+        FROM SNP_Gene sg
+        INNER JOIN Genes g ON sg.gene_id = g.gene_id
+        WHERE sg.snp_id = ?     
+    """, (snp["snp_id"],)).fetchall() # Joins the SNP_Gene table (mapping SNPs to genes) with the Genes table.
+
+    # Retrieves distinct p_value and sample_size from the Populations table.
+    # Ensures no duplicate population data is fetched.
+    populations = conn.execute("""
+        SELECT DISTINCT p_value, sample_size 
+        FROM Populations WHERE snp_id = ?
+    """, (snp["snp_id"],)).fetchall()
+
+    conn.close() # Closes the database connection 
+    return render_template('snp_details.html', snp=snp, mapped_genes=mapped_genes, populations=populations) # Passes the retrieved 
+    # SNP, gene, and population data to the snp_details.html template for display.
+
+
+
+@app.route('/filter_by_population', methods=['POST'])
+def filter_by_population():
+    """Filters SNPs by population and displays results. Computes summary stats for Tajima's D and Fst values. Additionally
+    provides downloadable summary statistics text file """
+    population = request.form.get('population') # Gets selected population
+    snp_ids = request.form.get('snp_ids') # Gets comma-separated SNP IDs
+
+    if not population or not snp_ids:
+        flash("Invalid selection. Please choose a population.", "error") # Displays error message if users search is not in population of the snp_ids
+        return redirect(url_for('index')) # Redirects the user to the home page
+
+    conn = get_db_connection() # Connects to the SQlite datababse 
+    snp_ids_list = snp_ids.split(',') # converts the comma-sperated snp_ids into a list 
+
+    print("🚀 Processing Population:", population) # Debugging logs 
+    print("📌 SNP IDs Received:", snp_ids_list) # Debugging logs 
+
+    # Queries SNPs for the selected population
+    # Generates placeholders dynamically based on the number of SNP IDs
+    placeholders = ','.join(['?'] * len(snp_ids_list))
+    query = f"""
+        SELECT s.snp_name, s.chr_id, s.chr_pos, p.p_value, p.sample_size, s.snp_id
+        FROM SNPs s
+        JOIN Populations p ON s.snp_id = p.snp_id
+        WHERE p.region = ? AND s.snp_id IN ({placeholders})
+    """
+    params = [population] + snp_ids_list # Combines the population and SNP ID list for query execution
+    snps = conn.execute(query, params).fetchall() # Debugging log to check how many SNPs were foun
+
+    print(f"📊 Retrieved {len(snps)} SNPs")  # Debugging print
+
+    # Fetches mapped genes for each SNP
+    mapped_genes = {}
+    for snp in snps:
+        genes = conn.execute("""
+            SELECT g.gene_name 
+            FROM SNP_Gene sg
+            JOIN Genes g ON sg.gene_id = g.gene_id
+            WHERE sg.snp_id = ? 
+        """, (snp["snp_id"],)).fetchall() # Retrieves all genes mapped to the SNP
+         # Stores genes in a dictionary with SNP names as keys
+        mapped_genes[snp["snp_name"]] = [gene["gene_name"] for gene in genes]
+# Extracts unique snp_names for display 
+    unique_snp_names = set(snp["snp_name"] for snp in snps)
+# Initialises variables for summary stats and plots 
+    summary_stats = {}
+    tajima_plot_url = None
+    fst_plot_url = None
+    download_url = None
+
+    # Always Compute Summary Stats & Plot for South Asian Population
+    if population.lower() == "south asian" and snps:
+        # Computes Tajima's D Summary Stats for both Bengali (BEB) and Punjabi (PJL)
+        summary_stats = {} # Initialises summary stats dictionary
+
+        # Bin size to match SNP positions to bin ranges
+        bin_size = 10000  # Sets bin size for genomic window analysis
+
+        # Retrieve Tajima's D values for BEB and PJL
+        beb_tajima_values = {
+            row["bin_start"]: row["tajimas_d"] 
+            for row in conn.execute("SELECT bin_start, tajimas_d FROM tajimas_BEB").fetchall()
+        }
+        pjl_tajima_values = {
+            row["bin_start"]: row["tajimas_d"] 
+            for row in conn.execute("SELECT bin_start, tajimas_d FROM tajimas_PJL").fetchall()
+        }
+
+        def get_tajima_for_position(chr_pos, table_tajima_values):
+            """Helper function to return Tajima's D for the given SNP position based on bin range."""
+            for bin_start, tajima_d in table_tajima_values.items():
+                if bin_start <= chr_pos < (bin_start + bin_size):  # SNP position is in this bin's range
+                    return tajima_d
+            return "N/A"  # Returns "N/A" if no match found
+
+        # Computes Tajima's D for each SNP
+        for table_name, label in [("tajimas_BEB", "BEB"), ("tajimas_PJL", "PJL")]:
+            stats_query = f"SELECT bin_start, tajimas_d FROM {table_name}"
+            result = conn.execute(stats_query).fetchall()
+
+            # Fetch Tajima's D for SNPs based on position
+            tajima_values = []
+            for snp in snps:
+                tajima_value = get_tajima_for_position(snp["chr_pos"], beb_tajima_values if label == "BEB" else pjl_tajima_values)
+                tajima_values.append(tajima_value)
+
+            # Add stats for Tajima's D if data exists
+            if tajima_values:
+                summary_stats[f"tajimas_{label}"] = {
+                    "min": min(tajima_values),
+                    "max": max(tajima_values),
+                    "avg": np.mean([float(v) for v in tajima_values if v != "N/A"]),
+                    "median": np.median([float(v) for v in tajima_values if v != "N/A"]),
+                    "std": np.std([float(v) for v in tajima_values if v != "N/A"])
+                }
+
+        # Computes Fst Summary Stats
+        chromosome = snps[0]["chr_id"]
+        start_pos = min([snp["chr_pos"] for snp in snps])
+        end_pos = max([snp["chr_pos"] for snp in snps])
+
+        fst_query = """SELECT position, fst_value FROM Fst_Values WHERE chromosome = ? AND position BETWEEN ? AND ?"""
+        fst_result = conn.execute(fst_query, (chromosome, start_pos, end_pos)).fetchall()
+        fst_values = []
+        for row in fst_result:
+            try:
+                fst_value = float(row["fst_value"])
+                fst_values.append(fst_value)
+            except (ValueError, TypeError):
+                continue
+
+        if fst_values:
+            summary_stats["fst"] = {
+                "min": min(fst_values),
+                "max": max(fst_values),
+                "avg": np.mean(fst_values),
+                "median": np.median(fst_values),
+                "std": np.std(fst_values)
+            }
+
+        print("✅ Summary Statistics Computed:", summary_stats)  # Debugging print
+
+        # Generates Plots
+        tajima_plot_url = url_for('tajimas_image', chromosome=chromosome, start=start_pos, end=end_pos)
+        fst_plot_url = url_for('fst_image', chromosome=chromosome, start=start_pos, end=end_pos)
+
+        # Saves summary statistics as a text file
+        static_dir = os.path.join(os.getcwd(), "static")
+        os.makedirs(static_dir, exist_ok=True)
+
+        summary_file_path = os.path.join(static_dir, "summary_statistics.txt")
+        with open(summary_file_path, "w") as f:
+            f.write("Tajima's D & Fst Summary Statistics\n\n")
+
+            f.write("Sample Sizes:\n")
+            f.write("Punjabi (PJL): 96 samples\n")
+            f.write("Bengali (BEB): 86 samples\n\n")
+
+            for key, values in summary_stats.items():
+                f.write(f"{key.upper()} Summary:\n")
+                for stat, value in values.items():
+                    f.write(f"{stat.title()}: {value:.3f}\n")
+                f.write("\n")
+
+            f.write("Plotted SNPs (Chromosome, Position, Tajima_BEB, Tajima_PJL, Fst):\n")
+            f.write("Chromosome\tPosition\tTajima_BEB\tTajima_PJL\tFst\n")
+
+            # Remove duplicate SNPs by using a dictionary to ensure uniqueness based on (chr_id, chr_pos)
+            unique_snps = { (snp['chr_id'], snp['chr_pos']): snp for snp in snps }
+
+            for snp in unique_snps.values():  # Use unique SNPs here
+                tajima_beb = get_tajima_for_position(snp["chr_pos"], beb_tajima_values)
+                tajima_pjl = get_tajima_for_position(snp["chr_pos"], pjl_tajima_values)
+                fst_value = next((row["fst_value"] for row in fst_result if row["position"] == snp["chr_pos"]), "N/A")
+
+                f.write(f"{snp['chr_id']}\t{snp['chr_pos']}\t{tajima_beb}\t{tajima_pjl}\t{fst_value}\n")
+
+        download_url = url_for("download_summary")
+
+    conn.close() # Closes the connection to the database 
+
+    return render_template(
+        'population_snps.html', # Renders the 'population_snps.html' template file to display results.
+        snps=snps, # Passes the list of SNPs retrieved from the database for the selected population.
+        region=population, # Passes the selected population name to display in the template.
+        unique_snp_count=len(unique_snp_names),  # Calculates and passes the number of unique SNPs for display
+        mapped_genes=mapped_genes, #  Passes a dictionary containing SNP names as keys and their associated genes as values
+        summary_stats=summary_stats,  # Passes the computed summary statistics (Tajima's D & Fst values)
+        tajima_plot_url=tajima_plot_url,  
+        fst_plot_url=fst_plot_url,  
+        download_url=download_url   #  Passs the URL for downloading the summary statistics file
+    )
+
+@app.route('/fst_image') # This Flask route decorator routes the URL endpoint /fst_image to the fst_image function. 
+# When a user sends a GET request to this URL, this function is called.
+def fst_image(): # This is the definition of the fst_image function. It will be run whenever a request is made to /fst_image.
+    """Generates and serves the Fst plot for a given chromosome and range."""
+    chrom = request.args.get('chromosome', type=int)
+    start_pos = request.args.get('start', type=int)
+    end_pos = request.args.get('end', type=int)
+
+# This condition below determines whether one of the three needed parameters (chrom, start_pos, or end_pos) is missing or invalid.
+# Any missing parameters initiate the error handling block.
+    if not chrom or not start_pos or not end_pos:
+        return jsonify({"error": "Missing parameters"}), 400 # Returns 400 error if any parameters are missing 
+
+    img = plot_fst_values(chrom, start_pos, end_pos) # Calls the plot_fst_values function 
+    return send_file(img, mimetype='image/png') # Returns an image of the plot 
+
+
+def plot_fst_values(chromosome, start_pos, end_pos):
+    """Generates an Fst plot for the given chromosome range.
+    Creates a Fst plot for the specified chromosomal range. 
+    This function retrieves Fst values within a specific range from a database 
+    and visualizes them using a scatter plot.
+
+    Parameters:
+    - chromosome (int): The chromosome number on which Fst values are plotted.
+    - start_pos (int): This is the range's starting genomic location.
+    - end_pos (int): The end genomic location of the range.
+
+    Returns:
+    - img (bytesIO): A PNG image of the created Fst plot that can be served or saved.
+    
+    """
+    conn = get_db_connection() # Connects to the database 
+# SQL query to retrieve Fst values for the specified chromosome and position range
+    query = """
+    SELECT position, fst_value 
+    FROM Fst_Values 
+    WHERE chromosome = ? AND position BETWEEN ? AND ?
+    ORDER BY position;
+    """
+# Executes the query and load the result into a pandas DataFrame
+    df = pd.read_sql_query(query, conn, params=(chromosome, start_pos, end_pos))
+    conn.close() # closes connection to the database 
+# If the DataFrame is empty, return None (no data found in the given range)
+    if df.empty:
+        return None  
+ # Creates a new figure for the plot with a specific size (10x5 inches)
+    plt.figure(figsize=(10, 5))
+    plt.scatter(df["position"], df["fst_value"], c="purple", alpha=0.7, label="Fst Values") #  Points are colored purple with transparency
+    plt.axhline(y=0, color="black", linestyle="--", label="Neutral Selection")
+    plt.xlabel("Genomic Position (bp)")
+    plt.ylabel("Fst Value")
+    plt.title(f"Fst Plot - Chromosome {chromosome} ({start_pos}-{end_pos})")
+    plt.legend()
+    plt.grid(True)
+
+    img = io.BytesIO()
+    plt.savefig(img, format='png')
+    plt.close()
+    img.seek(0)
+ # Return the image buffer containing the generated plot
+    return img
+
+
+@app.route("/download_summary")
+def download_summary():
+    """Allows users to download summary statistics as a text file."""
+# Defines the static directory path where files are stored. This ensures we are using the correct directory.
+    static_dir = os.path.join(os.getcwd(), "static") 
+# Constructs the full file path for the summary statistics text file
+    summary_file_path = os.path.join(static_dir, "summary_statistics.txt")
+    
+# Checks if the file actually exists before sending it
+# The os.path.exists() function checks if the file exists at the given path
+    if not os.path.exists(summary_file_path):
+# If the file doesn't exist, log an error message and return a 404 error response to the user
+        print(f"❌ ERROR: File not found at {summary_file_path}")
+        return "Error: Summary statistics file not found", 404 # Returns a 404 error with a message
+# The send_file function is used to send the file to the user. The 'as_attachment=True' flag forces the browser to download the file
+# The 'download_name' argument specifies the filename that will be used when the file is downloaded by the user.
+    print(f"✅ Sending file: {summary_file_path}")
+    return send_file(summary_file_path, as_attachment=True, download_name="summary_statistics.txt")
+
+
+
+# Function to fetch Tajima's D values
+# This is the function header. It defines the function get_tajimas which retrieves Tajima's D values 
+# from a specific table in a database for a given chromosome and genomic range.
+def get_tajimas(chromosome, start_pos, end_pos, table_name):
+    """Fetch Tajima's D values for a specific region from the given SQL table."""
+    conn = sqlite3.connect(DB_PATH)  # Connects to the SQlite database 
+    query = f'''
+    SELECT bin_start, tajimas_d
+    FROM {table_name}
+    WHERE chromosome = ?
+    AND bin_start BETWEEN ? AND ?
+    ORDER BY bin_start;
+    '''
+    
+    try:
+# Executes the SQL query using pandas' read_sql_query method, which loads the result into a pandas DataFrame
+# The `params` argument safely passes the parameters (chromosome, start_pos, end_pos) into the query to prevent SQL injection
+        df = pd.read_sql_query(query, conn, params=(chromosome, start_pos, end_pos))
+    except Exception as e: 
+# If an error occurs while executing the query (e.g., database issue, wrong table name, etc.), handles the exception
+        print(f"❌ SQL Error while querying {table_name}: {e}")
+        df = pd.DataFrame()  # Return an empty DataFrame if there's an error
+    finally:
+# Ensures that the database connection is properly closed after the query execution (whether successful or not)
+        conn.close()  # Ensure the connection is properly closed
+
+    return df  # Now it actually returns the DataFrame
+
+
+@app.route('/tajimas_image')
+def tajimas_image():
+    """Generates and serves separate Tajima's D plot images for both Punjabi and Bengali populations."""
+    chrom = request.args.get('chromosome', type=int)
+    start_pos = request.args.get('start', type=int)
+    end_pos = request.args.get('end', type=int)
+
+# Checks if any of the required parameters are missing
+    if not chrom or not start_pos or not end_pos:
+# If any parameter is missing, returns an error response with a 400 status code
+        return jsonify({"error": "Missing parameters"}), 400
+
+# Generates the Tajima’s D plot for the given chromosome and position range
+# The `plot_tajimas_separate()` function is responsible for generating the plot
+# It is assumed that this function generates the image for both Punjabi and Bengali populations
+    img = plot_tajimas_separate(chrom, start_pos, end_pos)
+
+# Serves the generated image as a response to the user
+# The `send_file()` function is used to send files to the user, and here it sends the generated image
+# The `mimetype='image/png'` indicates that the file being served is a PNG image
+    return send_file(img, mimetype='image/png')
+
+
+
+# Function to Generate the Tajima's D Plot (Helper Function)
+def plot_tajimas_separate(chromosome, start_pos, end_pos):
+    """Generate and return separate Tajima's D plots for Punjabi (PJL) and Bengali (BEB) populations."""
+
+# Fetches Tajima's D data for the Punjabi (PJL) population from the 'tajimas_PJL' table
+    df_pjl = get_tajimas(chromosome, start_pos, end_pos, "tajimas_pjl")
+# Fetches Tajima's D data for the Bengali (BEB) population from the 'tajimas_BEB' table
+    df_beb = get_tajimas(chromosome, start_pos, end_pos, "tajimas_BEB")
+
+# Creates a figure with two subplots (2 rows, 1 column) for plotting the Tajima's D values for both populations
+    fig, axes = plt.subplots(2, 1, figsize=(10, 10))  # Create two subplots vertically
+
+# Plot for Punjabi (PJL)
+    if not df_pjl.empty: # Checks if the DataFrame for Punjabi population is not empty
+# Plots Tajima's D values for the Punjabi population
+        axes[0].plot(df_pjl["bin_start"], df_pjl["tajimas_d"], marker="o", linestyle="-", color="blue", label="Punjabi (Lahore)")
+# Adds a horizontal line at y=0 to represent Neutral Selection
+        axes[0].axhline(y=0, color="black", linestyle="--", label="Neutral Selection")
+# Sets the title for the plot of the Punjabi population
+        axes[0].set_title(f"Tajima's D for Punjabi (PJL) - Chromosome {chromosome} ({start_pos}-{end_pos})")
+        axes[0].set_xlabel("Genomic Position (bp)")
+        axes[0].set_ylabel("Tajima's D")
+# Add a legend for the plot to indicate the population and neutral selection line
+        axes[0].legend()
+
+# Plot for Bengali (BEB)
+    if not df_beb.empty: # Check if the DataFrame for Bengali population is not empty
+ # Plots Tajima's D values for the Bengali population
+        axes[1].plot(df_beb["bin_start"], df_beb["tajimas_d"], marker="s", linestyle="--", color="red", label="Bengali (Bangladesh)")
+        axes[1].axhline(y=0, color="black", linestyle="--", label="Neutral Selection")
+        axes[1].set_title(f"Tajima's D for Bengali (BEB) - Chromosome {chromosome} ({start_pos}-{end_pos})")
+        axes[1].set_xlabel("Genomic Position (bp)")
+        axes[1].set_ylabel("Tajima's D")
+# Adds a legend for the plot to indicate the population and neutral selection line
+        axes[1].legend()
+
+# Saves the image to a BytesIO object and returns it
+    img = io.BytesIO()
+# Uses the tight_layout to adjust the spacing between subplots and prevent overlap of labels and titles
+    plt.tight_layout()  # Adjust layout to prevent overlap
+# Saves the plot to the BytesIO object in PNG format
+    plt.savefig(img, format='png')
+    plt.close()  # Closees the plot to avoid display issues
+    img.seek(0)
+# Return the image buffer containing the plot as a PNG image
+    return img
+
+
+@app.route('/gene/<gene_name>')
+def gene_ontology(gene_name):
+    """Displays ontology terms and pathway data for a given gene using the new Ontology table."""
+    conn = get_db_connection() # Connects to the database 
+
+
+# Fetches gene details from the Genes table based on the gene_name parameter
+    gene = conn.execute("SELECT * FROM Genes WHERE gene_name = ?", (gene_name,)).fetchone()
+# If the gene is not found in the database, close the connection and redirect
+    if not gene:
+        conn.close() # Closes the database connection as we no longer need it
+        flash(f"Gene '{gene_name}' not found.", "error") # if the gene name is not found shows an error message to the user
+        return redirect(url_for('index')) # Redirects the user to the index page (home page)
+
+# Fetches ontology data from the Ontology table for the gene_id obtained from the Genes table
+    ontology = conn.execute("""
+        SELECT gene_stable_id, description, gene_type, 
+               molecular_function, biological_process, cellular_component, pathway
+        FROM Ontology
+        WHERE gene_id = ?
+    """, (gene['gene_id'],)).fetchone() # Uses the gene_id from the previously fetched gene to query Ontology
+
+    conn.close() # Closes the database connection when the required data has been fetched
+
+#  Handles the missing ontology data
+    if not ontology:
+        flash(f"No ontology data found for gene '{gene_name}'.", "warning") # shows a warning message to the user of ig gene name is not found in the database 
+        return render_template('gene_ontology.html', gene_name=gene_name, ontology_data={}, gene_info={})  # Renders the template with empty data
+
+# Organises the ontology data: Split the terms into lists where necessary
+    ontology_data = {
+        "Molecular Function": ontology['molecular_function'].split('; ') if ontology['molecular_function'] else [],
+        "Biological Process": ontology['biological_process'].split('; ') if ontology['biological_process'] else [],
+        "Cellular Component": ontology['cellular_component'].split('; ') if ontology['cellular_component'] else []
+    }
+# This ensures that the molecular function, biological process, and cellular component are split into lists,
+# where each term appears on a new line if multiple terms exist (separated by "; ").
+
+# Process Pathways: If pathway data exists, split it into a list. If None, provide a fallback message
+    pathway_list = ontology['pathway'].split('; ') if ontology['pathway'] else []
+
+# Creates an additional gene information to display on the page, including pathways
+    gene_info = {
+        "Stable ID": ontology['gene_stable_id'], # Stable ID for the gene
+        "Description": ontology['description'], # Description of the gene
+        "Gene Type": ontology['gene_type'],  # Type of the gene (protein coding, non-coding, etc.)
+        "Pathways": pathway_list if pathway_list else ["No pathway data available."]
+    }
+
+# Returns the response by rendering the gene_ontology.html template with the collected data
+    return render_template('gene_ontology.html', gene_name=gene_name, ontology_data=ontology_data, gene_info=gene_info)
+# This will render the HTML page with the information for the specified gene. It includes ontology terms and pathways.
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
+# Starts the Flask web application in debug mode for development
