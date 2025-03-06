@@ -11,7 +11,9 @@ import numpy as np
 
 app = Flask(__name__, static_folder='static', static_url_path='/static')
 app.secret_key = 'supersecretkey'  # Needed for flashed messages
-DB_PATH = "/Users/zeinabbarre/Desktop/type_2_diabetes/instance/db.db"
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+DB_PATH = os.path.join(BASE_DIR, "instance", "db.db")  # ✅ Universal database path
+
 
 # ✅ Function to Establish Database Connection
 def get_db_connection():
@@ -109,30 +111,19 @@ def snp_details(snp_name):
         SELECT * FROM SNPs WHERE snp_name = ?
     """, (snp_name,)).fetchone()
 
-    # 🔹 If SNP is not in the SNPs table, check if it exists in Populations
+    # 🔹 If SNP is not found, return an error
     if not snp:
-        pop_snp = conn.execute("""
-            SELECT DISTINCT snp_id FROM Populations WHERE snp_id = (
-                SELECT snp_id FROM SNPs WHERE snp_name = ?
-            )
-        """, (snp_name,)).fetchone()
+        conn.close()
+        flash(f"SNP '{snp_name}' not found.", "error")
+        return redirect(url_for('index'))
 
-        if pop_snp:
-            snp = {"snp_name": snp_name, "chr_id": "Unknown", "chr_pos": "Unknown", "snp_id": pop_snp["snp_id"]}
-        else:
-            conn.close()
-            flash(f"SNP '{snp_name}' not found.", "error")
-            return redirect(url_for('index'))
-
-    # 🔹 Get mapped genes (only if SNP is in `SNPs`)
-    mapped_genes = []
-    if isinstance(snp, sqlite3.Row) and "snp_id" in snp.keys():
-        mapped_genes = conn.execute("""
-            SELECT g.gene_name 
-            FROM SNP_Gene sg
-            INNER JOIN Genes g ON sg.gene_id = g.gene_id
-            WHERE sg.snp_id = ?
-        """, (snp["snp_id"],)).fetchall()
+    # 🔹 Get mapped genes
+    mapped_genes = conn.execute("""
+        SELECT g.gene_name 
+        FROM SNP_Gene sg
+        INNER JOIN Genes g ON sg.gene_id = g.gene_id
+        WHERE sg.snp_id = ?
+    """, (snp["snp_id"],)).fetchall()
 
     # 🔹 Get population data (without Population column) and remove duplicates
     populations = conn.execute("""
@@ -142,6 +133,7 @@ def snp_details(snp_name):
 
     conn.close()
     return render_template('snp_details.html', snp=snp, mapped_genes=mapped_genes, populations=populations)
+
 
 
 @app.route('/filter_by_population', methods=['POST'])
@@ -168,7 +160,6 @@ def filter_by_population():
         JOIN Populations p ON s.snp_id = p.snp_id
         WHERE p.region = ? AND s.snp_id IN ({placeholders})
     """
-
     params = [population] + snp_ids_list
     snps = conn.execute(query, params).fetchall()
 
@@ -181,11 +172,10 @@ def filter_by_population():
             SELECT g.gene_name 
             FROM SNP_Gene sg
             JOIN Genes g ON sg.gene_id = g.gene_id
-            WHERE sg.snp_id = ?
+            WHERE sg.snp_id = ? 
         """, (snp["snp_id"],)).fetchall()
         mapped_genes[snp["snp_name"]] = [gene["gene_name"] for gene in genes]
 
-    # ✅ Count unique SNP names
     unique_snp_names = set(snp["snp_name"] for snp in snps)
 
     summary_stats = {}
@@ -195,28 +185,64 @@ def filter_by_population():
 
     # ✅ Always Compute Summary Stats & Plot for South Asian Population
     if population.lower() == "south asian" and snps:
-        # ✅ Compute Tajima's D Summary Stats
-        stats_query = """SELECT tajimas_d FROM tajimas_BEB"""
-        result = conn.execute(stats_query).fetchall()
-        tajima_values = [row["tajimas_d"] for row in result if row["tajimas_d"] is not None]
+        # ✅ Compute Tajima's D Summary Stats for both Bengali (BEB) and Punjabi (PJL)
+        summary_stats = {}
 
-        if tajima_values:
-            summary_stats["tajimas_d"] = {
-                "min": min(tajima_values),
-                "max": max(tajima_values),
-                "avg": np.mean(tajima_values),
-                "median": np.median(tajima_values),
-                "std": np.std(tajima_values)
-            }
+        # Bin size to match SNP positions to bin ranges
+        bin_size = 10000  # Adjust according to your data
+
+        # Retrieve Tajima's D values for BEB and PJL
+        beb_tajima_values = {
+            row["bin_start"]: row["tajimas_d"] 
+            for row in conn.execute("SELECT bin_start, tajimas_d FROM tajimas_BEB").fetchall()
+        }
+        pjl_tajima_values = {
+            row["bin_start"]: row["tajimas_d"] 
+            for row in conn.execute("SELECT bin_start, tajimas_d FROM tajimas_PJL").fetchall()
+        }
+
+        def get_tajima_for_position(chr_pos, table_tajima_values):
+            """Helper function to return Tajima's D for the given SNP position based on bin range."""
+            for bin_start, tajima_d in table_tajima_values.items():
+                if bin_start <= chr_pos < (bin_start + bin_size):  # SNP position is in this bin's range
+                    return tajima_d
+            return "N/A"  # Return "N/A" if no match found
+
+        # ✅ Compute Tajima's D for each SNP
+        for table_name, label in [("tajimas_BEB", "BEB"), ("tajimas_PJL", "PJL")]:
+            stats_query = f"SELECT bin_start, tajimas_d FROM {table_name}"
+            result = conn.execute(stats_query).fetchall()
+
+            # Fetch Tajima's D for SNPs based on position
+            tajima_values = []
+            for snp in snps:
+                tajima_value = get_tajima_for_position(snp["chr_pos"], beb_tajima_values if label == "BEB" else pjl_tajima_values)
+                tajima_values.append(tajima_value)
+
+            # Add stats for Tajima's D if data exists
+            if tajima_values:
+                summary_stats[f"tajimas_{label}"] = {
+                    "min": min(tajima_values),
+                    "max": max(tajima_values),
+                    "avg": np.mean([float(v) for v in tajima_values if v != "N/A"]),
+                    "median": np.median([float(v) for v in tajima_values if v != "N/A"]),
+                    "std": np.std([float(v) for v in tajima_values if v != "N/A"])
+                }
 
         # ✅ Compute Fst Summary Stats
         chromosome = snps[0]["chr_id"]
         start_pos = min([snp["chr_pos"] for snp in snps])
         end_pos = max([snp["chr_pos"] for snp in snps])
 
-        fst_query = """SELECT fst_value FROM Fst_Values WHERE chromosome = ? AND position BETWEEN ? AND ?"""
+        fst_query = """SELECT position, fst_value FROM Fst_Values WHERE chromosome = ? AND position BETWEEN ? AND ?"""
         fst_result = conn.execute(fst_query, (chromosome, start_pos, end_pos)).fetchall()
-        fst_values = [row["fst_value"] for row in fst_result if row["fst_value"] is not None]
+        fst_values = []
+        for row in fst_result:
+            try:
+                fst_value = float(row["fst_value"])
+                fst_values.append(fst_value)
+            except (ValueError, TypeError):
+                continue
 
         if fst_values:
             summary_stats["fst"] = {
@@ -229,24 +255,42 @@ def filter_by_population():
 
         print("✅ Summary Statistics Computed:", summary_stats)  # Debugging print
 
+        # ✅ Generate Plots
+        tajima_plot_url = url_for('tajimas_image', chromosome=chromosome, start=start_pos, end=end_pos)
+        fst_plot_url = url_for('fst_image', chromosome=chromosome, start=start_pos, end=end_pos)
+
         # ✅ Save summary statistics as a text file
         static_dir = os.path.join(os.getcwd(), "static")
         os.makedirs(static_dir, exist_ok=True)
 
         summary_file_path = os.path.join(static_dir, "summary_statistics.txt")
         with open(summary_file_path, "w") as f:
-            f.write("Tajima's D & Fst Summary Statistics\n")
+            f.write("Tajima's D & Fst Summary Statistics\n\n")
+
+            f.write("Sample Sizes:\n")
+            f.write("Punjabi (PJL): 96 samples\n")
+            f.write("Bengali (BEB): 86 samples\n\n")
+
             for key, values in summary_stats.items():
                 f.write(f"{key.upper()} Summary:\n")
                 for stat, value in values.items():
                     f.write(f"{stat.title()}: {value:.3f}\n")
                 f.write("\n")
 
-        download_url = url_for("download_summary")
+            f.write("Plotted SNPs (Chromosome, Position, Tajima_BEB, Tajima_PJL, Fst):\n")
+            f.write("Chromosome\tPosition\tTajima_BEB\tTajima_PJL\tFst\n")
 
-        # ✅ Generate Plots
-        tajima_plot_url = url_for('tajimas_image', chromosome=chromosome, start=start_pos, end=end_pos)
-        fst_plot_url = url_for('fst_image', chromosome=chromosome, start=start_pos, end=end_pos)
+            # Remove duplicate SNPs by using a dictionary to ensure uniqueness based on (chr_id, chr_pos)
+            unique_snps = { (snp['chr_id'], snp['chr_pos']): snp for snp in snps }
+
+            for snp in unique_snps.values():  # Use unique SNPs here
+                tajima_beb = get_tajima_for_position(snp["chr_pos"], beb_tajima_values)
+                tajima_pjl = get_tajima_for_position(snp["chr_pos"], pjl_tajima_values)
+                fst_value = next((row["fst_value"] for row in fst_result if row["position"] == snp["chr_pos"]), "N/A")
+
+                f.write(f"{snp['chr_id']}\t{snp['chr_pos']}\t{tajima_beb}\t{tajima_pjl}\t{fst_value}\n")
+
+        download_url = url_for("download_summary")
 
     conn.close()
 
