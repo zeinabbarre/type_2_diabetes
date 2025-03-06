@@ -2,6 +2,32 @@
 Please use the update commands at the bottom of the schema tables page once the tablesare populated to map South Asia and South Asian entries correctly. Once this is done, there should only be 1 South Asian population option in the drop down menu. The csv file used to populate the Fst_Values table is in the csv_files folder and is a google drive link due to the size of the file. Please download it and save it as fsdt_values_cleaned.csv.
 
 
+Installation instructions
+
+
+
+Create & Activate a Virtual Environment
+macOS/Linux:
+
+python3 -m venv venv
+source venv/bin/activate
+Windows (Command Prompt):
+
+venv\Scripts\activate
+
+Install dependencies
+pip install -r requirements.txt
+
+Create database in instance folder using sqlite
+sqlite3 instance/db.db < schema.sql
+
+
+
+
+
+
+
+
 The strucutre of your folders should be the same as this. 
 Open up vscode and create a type_2_diabetes folder and in it create an instance folder. This will be the path that you will quote when asked for the database path.
 The databse will 
