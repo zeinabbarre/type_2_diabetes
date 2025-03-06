@@ -108,7 +108,7 @@ END;
 
 
 
-CREATE TABLE tajimas_pjl (
+CREATE TABLE tajimas_PJL(
     chromosome INTEGER,
     bin_start INTEGER,
     n_snps INTEGER,
