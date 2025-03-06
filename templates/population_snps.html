@@ -17,7 +17,7 @@ body {
     background-attachment: fixed;
 }
 
-/* ✅ Tiny Reduction */
+/* ✅ Container */
 .container {
     max-width: 76%;
     width: 76%;
@@ -81,25 +81,42 @@ tr:nth-child(even) {
 .download-button:hover, .back-button:hover {
     background-color: #0056b3;
 }
+
+/* ✅ Plot Containers */
+.tajima-container, .fst-container {
+    width: 90%;
+    margin: 20px auto;
+    padding: 20px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.plot-box img {
+    width: 100%;
+    height: auto;
+    border-radius: 10px;
+}
 </style>
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     let population = "{{ region }}";  
-    let backgroundImage = "/static/images/unknown.png"; 
-    let tableHeaderColor = "#cf3847"; 
+    let backgroundImage = "{{ url_for('static', filename='images/unknown.png') }}";  
+    let tableHeaderColor = "#cf3847";  
 
     const populationStyles = {
-        "African": { "background": "/static/images/africa.png", "headerColor": "#8B0000" },
-        "American": { "background": "/static/images/america.png", "headerColor": "#003366" },
-        "African American": { "background": "/static/images/america.png", "headerColor": "#003366" },
-        "General Asia": { "background": "/static/images/general_asia.png", "headerColor": "#808080" },
-        "Indigenous Australian": { "background": "/static/images/australia.png", "headerColor": "#DAA520" },
-        "East Asian": { "background": "/static/images/east_asia.png", "headerColor": "#E07B3D" },
-        "Middle Eastern": { "background": "/static/images/middle_east.png", "headerColor": "#A0522D" },
-        "Unknown": { "background": "/static/images/unknown.png", "headerColor": "#B53A3A" },
-        "South Asian": { "background":"/static/images/south_asia.png", "headerColor": "#8A9C8F" },
-        "European": { "background":"/static/images/europe.png", "headerColor": "#F6D7B0" }
+        "African": { "background": "{{ url_for('static', filename='images/africa.png') }}", "headerColor": "#8B0000" },
+        "American": { "background": "{{ url_for('static', filename='images/america.png') }}", "headerColor": "#003366" },
+        "African American": { "background": "{{ url_for('static', filename='images/america.png') }}", "headerColor": "#003366" },
+        "General Asia": { "background": "{{ url_for('static', filename='images/general_asia.png') }}", "headerColor": "#808080" },
+        "Indigenous Australian": { "background": "{{ url_for('static', filename='images/australia.png') }}", "headerColor": "#DAA520" },
+        "East Asian": { "background": "{{ url_for('static', filename='images/east_asia.png') }}", "headerColor": "#E07B3D" },
+        "Middle Eastern": { "background": "{{ url_for('static', filename='images/middle_east.png') }}", "headerColor": "#A0522D" },
+        "Unknown": { "background": "{{ url_for('static', filename='images/unknown.png') }}", "headerColor": "#B53A3A" },
+        "South Asian": { "background": "{{ url_for('static', filename='images/south_asia.png') }}", "headerColor": "#8A9C8F" },
+        "European": { "background": "{{ url_for('static', filename='images/europe.png') }}", "headerColor": "#F6D7B0" }
     };
 
     if (populationStyles[population]) {
@@ -115,6 +132,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     document.documentElement.style.setProperty('--table-header-color', tableHeaderColor);
 });
+
 </script>
 
 </head>
@@ -122,10 +140,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
 <div class="container">
     <h1>SNPs for Population: {{ region }}</h1>
-
     <p><strong>Showing {{ unique_snp_count }} Unique SNPs</strong> in <strong>{{ region }}</strong>.</p>
 
-    <!-- 1️⃣ SNP Table -->
     <div class="snp-table-container">
         <h2>SNP Details</h2>
         <div class="table-container">
@@ -167,17 +183,20 @@ document.addEventListener("DOMContentLoaded", function () {
         </div>
     </div>
 
-    <!-- 2️⃣ Summary Statistics -->
     {% if region.lower() == "south asian" and summary_stats %}
         <div class="summary-container">
             <h2>Summary Statistics</h2>
 
-            <h3>Tajima's D Summary</h3>
-            <table>
-                {% for key, value in summary_stats["tajimas_d"].items() %}
-                    <tr><td><strong>{{ key.title() }}:</strong></td><td>{{ value }}</td></tr>
-                {% endfor %}
-            </table>
+            {% for key, value in summary_stats.items() %}
+                {% if "tajimas" in key %}
+                    <h3>{{ key.replace("_", " ") }} Summary</h3>
+                    <table>
+                        {% for stat, val in value.items() %}
+                            <tr><td><strong>{{ stat.title() }}:</strong></td><td>{{ val }}</td></tr>
+                        {% endfor %}
+                    </table>
+                {% endif %}
+            {% endfor %}
 
             <h3>Fst Summary</h3>
             <table>
@@ -187,20 +206,21 @@ document.addEventListener("DOMContentLoaded", function () {
             </table>
         </div>
 
-        <!-- 3️⃣ Tajima's D Plot -->
         <div class="tajima-container">
             <h2>Tajima's D Plot</h2>
-            <img src="{{ tajima_plot_url }}" alt="Tajima's D Plot">
+            <div class="plot-box">
+                <img src="{{ tajima_plot_url }}" alt="Tajima's D Plot">
+            </div>
         </div>
 
-        <!-- 4️⃣ Fst Plot -->
         <div class="fst-container">
             <h2>Fst Plot</h2>
-            <img src="{{ fst_plot_url }}" alt="Fst Plot">
+            <div class="plot-box">
+                <img src="{{ fst_plot_url }}" alt="Fst Plot">
+            </div>
         </div>
     {% endif %}
 
-    <!-- ✅ Buttons Stay in the Same Position -->
     {% if download_url %}
         <a href="{{ download_url }}" class="download-button">Download Summary Statistics</a>
     {% endif %}
