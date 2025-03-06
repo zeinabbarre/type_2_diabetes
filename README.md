@@ -70,3 +70,4 @@ You might recieve an error saying you do not have matplotlib/pandas - make sure 
 If it still doesnt work, use pip install for the module/library not found. 
 
 
+Additional information about how summary statistics were calculated are found in the Summary_Statistics folder.
