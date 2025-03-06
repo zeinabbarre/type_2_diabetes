@@ -1,0 +1,75 @@
+#### STEP 1 ####
+## DOWNLOADING THE URLs LIST AND GENOMIC DATA FROM 1000 GENOMES FOR BEB(Bengali in bangladesh) ##
+
+ https://www.internationalgenome.org/data-portal/population/BEB # for downloading the URLs list for Bengali population select the 
+"1000 genomes phase 3 release" and select "variants" to access the compressed .VCF files. #
+# this should be the file name " igsr_Bengali in Bangladesh_undefined.tsv " #
+
+## download the server that deals with the fttp:// as these files cannot be downloaded directly ##
+https://filezilla-project.org. # download the filezilla client version #
+
+#### Connect to the 1000 Genomes FTP Server:
+In FileZilla, locate the "Quickconnect" bar at the top.
+Enter the following FTP details:
+Host: ftp.1000genomes.ebi.ac.uk
+Username: anonymous (if it asks for a username) or your email address (if required).
+Password: Leave it blank or use your email address (if requested).
+Click Quickconnect ####
+
+# filter the igsr_Bengali_in_Bangladesh_undefined.tsv  file to just have URLs #
+awk -F'\t' '{print $1}' igsr_Bengali in Bangladesh_undefined.tsv  > urls.txt # takes out the first column and pipes it into a new file called urls.txt #
+
+# download the vcf files #
+wget -i _urls.txt
+
+# After the files have downloaded they need to be filtered for the population specific samples as the vcf files are multi ancestry samples #
+# downlaod the sample list from  BEB and use this as a filter for cleaning the multi ancestry vcf file to only give samples for bengali population # 
+for file in *.vcf.gz; do   bcftools view -S samples.tsv --force-samples "$file" -o "filtered_${file}"; done   # filter VCF files using bcftools #
+
+# index the filtered files for easy parsing of data using command lines tabix to chnage them to .tbi indexed files. Do a loop for all the files #
+for chr in {1..22} X Y; do     tabix -p vcf filtered_ALL.chr${chr}.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.gz; done
+
+# loop did not work on chromosome X so it was done again individually #
+tabix -f -p vcf filtered_ALL.chrX.phase3_shapeit2_mvncall_integrated_v1c.20130502.genotypes.vcf.gz
+
+# to view the first 20 line and see if the format was okay or if the file for chromosome X was truncated or not #
+zcat filtered_ALL.chrX.phase3_shapeit2_mvncall_integrated_v1c.20130502.genotypes.vcf.gz | head -n 20
+
+# compute the Tajimas'D looping through all the filtered file and VCFtools is used to run Tajima'sD #
+for chr in {1..22}; do     vcftools --gzvcf filtered_ALL.chr${chr}.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.gz 
+--TajimaD 10000 --out tajimasD_bengali_chr${chr}; done
+
+# combine all the TajimasD results files #
+bcftools concat -o tajimasD_bengali_combined.vcf.gz -O z tajimasD_bengali_chr{1..22}
+
+# convert the tajima output into CSV file using excel #
+
+# clean the tajima output files for any NAN vlaues to avoid Uneccesary noise when plotting and integrating with the SNPs table #
+
+import pandas as pd
+
+# Read the CSV file (with header row)
+df = pd.read_csv("combined_filtered.vcf.gz")
+
+# Print the column names and first few rows
+print(df.columns)
+print(df.head())
+
+# Now, drop rows where 'TajimaD' is NaN (column 'TajimaD' is the 4th column, index 3)
+df_cleaned = df.dropna(subset=["TajimaD"])
+
+# Save the cleaned data to a new CSV file
+df_cleaned.to_csv("cleaned_tajima_PJL_file.csv", index=False)
+
+#### STEP 2 ####
+# CREATE SQLITE3 SCHEMA FOR THE CSV FILES # # PLEASE FOLLOW THE "Schemastable" file in the repository #
+
+#### STEP 3 ####
+# populate the schemas # # PLEASE FOLLOW THE "PY_CODES" FOLDER for populating the Tajimas_BEB schema #
+
+## Visualise the data using Pythons Matplotlib library, Pandas, and Numpy to analyse and visualise the data ##
+
+#### STEP 4 ####
+## MAKING FUNCTIONS FOR PLOTTING AND INTERGARTING DATA AND TO REDUCE REDUNDANCY ##
+# PLEASE FOLLOW THE "web_app" file FOR THE FUNCTIONS FOR DATA VISUALISATION #
+
