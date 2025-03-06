@@ -18,7 +18,7 @@ sqlite3 instance/db.db < schema.sql
 Please use the update commands at the bottom of the schema tables page once the tablesare populated to map South Asia and South Asian entries correctly. Once this is done, there should only be 1 South Asian population option in the drop down menu. The csv file used to populate the Fst_Values table is in the csv_files folder and is a google drive link due to the size of the file. Please download it and save it as fsdt_values_cleaned.csv.
 
 
-
+Use the relevant .py codes in py_codes folder to populate the tables in the database.
 
 
 
