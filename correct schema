@@ -121,3 +121,14 @@ CREATE TABLE tajimas_BEB (
     n_snps INTEGER,
     tajimas_d REAL
 );
+
+CREATE TABLE Fst_Values (
+    fst_id INTEGER PRIMARY KEY AUTOINCREMENT,  -- Unique ID for each Fst entry
+    snp_id INTEGER,                            -- Foreign key linking to SNPs table
+    chromosome TEXT NOT NULL,                  -- Chromosome number (TEXT to match SNPs table)
+    position INTEGER NOT NULL,                 -- Genomic position of the SNP
+    fst_value REAL NOT NULL,                   -- Fst statistic value
+    population_1 TEXT NOT NULL,                -- First population in comparison
+    population_2 TEXT NOT NULL,                -- Second population in comparison
+    FOREIGN KEY (snp_id) REFERENCES SNPs(snp_id) ON DELETE SET NULL
+);
