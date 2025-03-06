@@ -12,14 +12,14 @@ venv\Scripts\activate
 Install dependencies
 pip install -r requirements.txt
 
-Create database in instance folder using sqlite
-sqlite3 instance/db.db < schema.sql
 
 Please use the update commands at the bottom of the schema tables page once the tablesare populated to map South Asia and South Asian entries correctly. Once this is done, there should only be 1 South Asian population option in the drop down menu. The csv file used to populate the Fst_Values table is in the csv_files folder and is a google drive link due to the size of the file. Please download it and save it as fsdt_values_cleaned.csv.
 
 
 Use the relevant .py codes in py_codes folder to populate the tables in the database.
-
+To do this, make a new directory called instance in the type_2_diabetes folder. 
+Create a new database in instance folder using sqlite
+sqlite3 instance/db.db < schema.sql
 
 
 The strucutre of your folders should be the same as this. 
@@ -35,21 +35,4 @@ Check that you have correctly created the databse by typing sqlite> .database
 (my example: /Users/zeinabbarre/Desktop/type_2_diabetes/instance/db.db)
 
 Copy the CREATE TABLES commands found in the schema tables file on Github into sqlite. Make sure to copy everything including the UPDATE commands.
-
-Download and save all the csv_files from GitHub to the csv_files folder within your own type_2_diabetes folder.
-The csv file used to populate the Fst_Values table is in the csv_files folder and is a google drive link due to the size of the file. 
-Please download it and save it as fsdt_values_cleaned.csv.
-
-
-In VScode, within the type_2_diabetes folder, create a web_application.py file. Copy and paste the code from the web_application.py file from Github.
-Move to the py_codes folder and create all of the .py files that are in the py_codes and copy and paste the code.
-
-Move to the templates folder and create all of the hmtml files that are in the GitHub templates folder. Copy and paste each files code and save.
-
-Edit the paths to your csv files and database to make sure they are correct. To find your database path in sqlite, type .database
-To find which file to use to populate the table, check the .py file you are trying to use.
-E.g. if i am using the populating_snp_table.py, i will check the csv file path and choose unique_snps.csv. 
-
-Install the dependencies from the requirements.txt file.
-Troubleshooting: although matplotlib is present in the requirements.txt file you might have to manually install it with pip install matplotlib.
 
