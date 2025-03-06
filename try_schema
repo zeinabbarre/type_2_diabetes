@@ -153,4 +153,14 @@ BEGIN
     END;
 END;
 
+CREATE TRIGGER auto_assign_gene_id
+BEFORE INSERT ON SNPs
+FOR EACH ROW
+BEGIN
+    UPDATE SNPs
+    SET gene_id = (
+        SELECT gene_id FROM SNP_Gene WHERE snp_id = NEW.snp_id
+    )
+    WHERE snp_id = NEW.snp_id;
+END;
 
