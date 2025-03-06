@@ -1,18 +1,20 @@
 import pandas as pd
 import sqlite3
+import os
 
-# File paths
-csv_file_path = "/Users/zeinabbarre/Desktop/type_2_diabetes/csv_files/snp_gene.csv"
-db_path = "/Users/zeinabbarre/Desktop/type_2_diabetes/instance/db.db"
+# ✅ Define Base Directory (move up one level to reach the root project folder)
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+DB_PATH = os.path.join(BASE_DIR, "instance", "db.db")  # ✅ Universal database path
+CSV_PATH = os.path.join(BASE_DIR, "csv_files", "snp_gene.csv")  # ✅ Universal CSV path
 
-# Load CSV file
-df = pd.read_csv(csv_file_path)
+# ✅ Load CSV file
+df = pd.read_csv(CSV_PATH)
 
-# Connect to SQLite
-conn = sqlite3.connect(db_path)
+# ✅ Connect to SQLite database
+conn = sqlite3.connect(DB_PATH)
 cursor = conn.cursor()
 
-# Insert SNP-Gene relationships
+# ✅ Insert SNP-Gene relationships
 for index, row in df.iterrows():
     # Get snp_id
     cursor.execute("SELECT snp_id FROM SNPs WHERE snp_name = ?", (row['snp_name'],))
@@ -26,12 +28,13 @@ for index, row in df.iterrows():
         snp_id = snp_result[0]
         gene_id = gene_result[0]
         
-        # Insert into SNP_Gene table
+        # ✅ Insert into SNP_Gene table
         cursor.execute("INSERT OR IGNORE INTO SNP_Gene (snp_id, gene_id) VALUES (?, ?)", (snp_id, gene_id))
 
-# Commit and close
+# ✅ Commit and close connection
 conn.commit()
 cursor.close()
 conn.close()
 
 print("✅ SNP-Gene mappings inserted successfully!")
+
