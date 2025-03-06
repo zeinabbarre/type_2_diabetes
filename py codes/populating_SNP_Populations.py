@@ -1,9 +1,15 @@
-
 import sqlite3
 import csv
+import os
 
-# ✅ Define your database path
-DB_PATH = "/Users/zeinabbarre/Desktop/type_2_diabetes/instance/db.db"
+# ✅ Define Base Directory (move up one level to reach the root project folder)
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+DB_PATH = os.path.join(BASE_DIR, "instance", "db.db")  # ✅ Universal database path
+CSV_PATH = os.path.join(BASE_DIR, "csv_files", "final_population.csv")  # ✅ Universal CSV path
+
+# ✅ Ensure CSV file exists
+if not os.path.exists(CSV_PATH):
+    raise FileNotFoundError(f"❌ CSV file not found: {CSV_PATH}")
 
 # ✅ Connect to SQLite
 conn = sqlite3.connect(DB_PATH)
@@ -14,9 +20,7 @@ cursor.execute("SELECT snp_name, snp_id FROM SNPs")
 snp_dict = {row[0]: row[1] for row in cursor.fetchall()}  # { "rs7018475": 1, "rs10761745": 2, ... }
 
 # ✅ Step 2: Open the large CSV file and process it row by row
-csv_file_path = "/Users/zeinabbarre/Desktop/type_2_diabetes/csv_files/population_csv/final_population.csv"
-
-with open(csv_file_path, "r", encoding="utf-8") as file:
+with open(CSV_PATH, "r", encoding="utf-8") as file:
     reader = csv.DictReader(file)  # Read CSV headers automatically
 
     to_insert = []  # Store batch insert values
@@ -52,4 +56,5 @@ if to_insert:
 conn.commit()
 conn.close()
 
-print("✅ Data insertion complete!")
+print(f"✅ Data insertion complete! Database: {DB_PATH}")
+
